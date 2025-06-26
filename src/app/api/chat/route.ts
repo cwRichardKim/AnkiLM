@@ -4,14 +4,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const body = await req.json();
     const { message, cardContext, command } = body;
     const mockResponse = {
-      response: `Mock response to "${message}"`,
+      response: `Mock response to "${message} ${cardContext}"`,
       command: command || "explain",
     };
     return NextResponse.json(mockResponse);
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Invalid request",
+        error: `Error: ${error}`,
       },
       {
         status: 400,
