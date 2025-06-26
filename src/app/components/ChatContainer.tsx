@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useCallback, useState } from "react";
 import { Card } from "../hooks/useCard";
 import Message, { MessageType } from "./Message";
@@ -10,15 +12,22 @@ export default function ChatContainer({
   card: Card;
   reviewCard: (card: Card, rating: number) => void;
 }) {
-  const [messages] = useState<MessageType[]>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage] = useState<MessageType | null>(null);
-  const sendMessage = useCallback((message: string) => {
-    // send post request to /api/chat
-    // listen for streaming response
-    // set streaming response to streaming message
-    console.log(message);
-  }, []);
+  const sendMessage = useCallback(
+    (message: string) => {
+      setInput("");
+      setIsStreaming(true);
+      setMessages((prev) => [...prev, { role: "user", content: message }]);
+      // send post request to /api/chat
+      // listen for streaming response
+      // set streaming response to streaming message
+      console.log(message);
+    },
+    [setInput]
+  );
   console.log(card, reviewCard);
   return (
     <div className="w-1/2 min-w-64 bg-gray-100 h-full">
@@ -27,12 +36,10 @@ export default function ChatContainer({
       <div>Streaming message</div>
       {streamingMessage && <Message message={streamingMessage} />}
       <div>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button onClick={() => sendMessage(input)}>send</button>
+        <Textarea value={input} onChange={(e) => setInput(e.target.value)} />
+        <Button disabled={isStreaming} onClick={() => sendMessage(input)}>
+          send
+        </Button>
       </div>
     </div>
   );
