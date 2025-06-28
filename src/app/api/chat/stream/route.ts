@@ -1,5 +1,6 @@
 import { MessageType } from "@/app/components/Message";
 import { Card } from "@/app/hooks/useCard";
+import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export interface ChatSession {
@@ -7,13 +8,15 @@ export interface ChatSession {
   context: { card: Card };
   status: "pending" | "streaming" | "complete";
   startedAt: number;
+  chunks: OpenAI.Responses.ResponseStreamEvent[];
+  processedText: string;
 }
 
 // Temporary global store for my purposes, will expand once i introduce auth
 const sessions = new Map<string, ChatSession>();
 
 export function createStreamSession(
-  session: Omit<ChatSession, "status" | "startedAt">
+  session: Pick<ChatSession, "messages" | "context">
 ) {
   const streamId = crypto.randomUUID();
   const startedAt = Date.now();
@@ -21,6 +24,8 @@ export function createStreamSession(
     ...session,
     status: "pending",
     startedAt,
+    chunks: [],
+    processedText: "",
   });
 
   processSession(streamId);
@@ -33,21 +38,21 @@ export function createStreamSession(
 async function processSession(streamId: string) {
   const session = sessions.get(streamId);
   if (!session) throw new Error(`Session not found: ${streamId}`);
-
   const { messages, context } = session;
-
   const input = constructInput(messages, context);
-
-  const openAI = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY_LOCAL,
-  });
-  const response = await openAI.responses.create({
+  const openAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_LOCAL });
+  const stream = await openAI.responses.create({
     model: "gpt-4o-mini",
     input,
+    stream: true,
   });
 
-  console.log(response);
-  return response;
+  for await (const chunk of stream) {
+    session.status = "streaming";
+    session.chunks.push(chunk);
+  }
+
+  return stream;
 }
 
 function constructInput(messages: MessageType[], context: { card: Card }) {
@@ -61,4 +66,19 @@ function constructInput(messages: MessageType[], context: { card: Card }) {
   );
   const messagesPrompt = `Conversation:\n${conversation}`;
   return `${systemPrompt}\n${commandPrompt}\n${contextPrompt}\n${messagesPrompt}`;
+}
+
+export async function DELETE(req: NextRequest) {
+  const sessionId = req.nextUrl.searchParams.get("sessionId");
+  if (sessionId === "*") {
+    sessions.clear();
+  } else if (sessionId) {
+    sessions.delete(sessionId);
+  } else {
+    return NextResponse.json(
+      { error: "No sessionId provided" },
+      { status: 400 }
+    );
+  }
+  return NextResponse.json({ message: "Sessions cleared" });
 }

@@ -6,5 +6,11 @@ export interface MessageType {
 }
 
 export default function Message({ message }: { message: MessageType }) {
-  return <div>Message {message.content}</div>;
+  return (
+    <div>
+      <div>
+        {message.role}: {message.content}
+      </div>
+    </div>
+  );
 }

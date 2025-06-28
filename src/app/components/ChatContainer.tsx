@@ -97,6 +97,12 @@ export default function ChatContainer({
     [pastMessages, optimisticMessages, streamingMessage]
   );
 
+  const clearServerSessions = useCallback(() => {
+    fetch("/api/chat/stream?sessionId=*", {
+      method: "DELETE",
+    });
+  }, []);
+
   return (
     <div className="w-1/2 min-w-64 bg-gray-100 h-full">
       <div>ChatContainer</div>
@@ -108,6 +114,7 @@ export default function ChatContainer({
         <Button disabled={isStreaming} onClick={() => sendMessage(input)}>
           send
         </Button>
+        <Button onClick={clearServerSessions}>Clear server sessions</Button>
       </div>
       {error && <div className="text-red-500">{error}</div>}
     </div>
