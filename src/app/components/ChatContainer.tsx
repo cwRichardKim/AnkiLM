@@ -55,17 +55,26 @@ export default function ChatContainer({
         } as ChatRequest),
       })
         .then(async (res) => {
-          const { response, id, timestamp } =
+          const { streamId, startedAt, cursor } =
             (await res.json()) as ChatResponse;
-          // TODO: check the cursor and move optimistic messages at or before the cursor to pastMessages
           setPastMessages(allMessages);
-          setStreamingMessage({
-            role: "agent",
-            content: response,
-            id,
-            timestamp,
+          // setStreamingMessage({
+          //   role: "agent",
+          //   content: response,
+          //   id,
+          //   timestamp,
+          // });
+          setOptimisticMessages((prev) => {
+            const indexAtCursor = prev.findIndex(
+              (message) => message.id === cursor
+            );
+            if (indexAtCursor === -1) {
+              throw new Error(
+                `Cursor not found in optimistic messages: ${cursor}, ${JSON.stringify(prev)}`
+              );
+            }
+            return prev.slice(0, indexAtCursor);
           });
-          setOptimisticMessages([]);
           setError(null);
         })
         .catch((err) => {

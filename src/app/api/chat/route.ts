@@ -1,6 +1,7 @@
 import { MessageType } from "@/app/components/Message";
 import { Card } from "@/app/hooks/useCard";
 import { NextRequest, NextResponse } from "next/server";
+import { createStreamSession } from "./stream/route";
 
 export interface ChatRequest {
   messages: MessageType[];
@@ -9,10 +10,9 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  response: string;
   cursor: string;
-  id: string;
-  timestamp: number;
+  streamId: string;
+  startedAt: number;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -37,25 +37,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         throw new Error(`Unknown command: ${command}`);
     }
 
-    console.log(
-      `Send to OpenAI: ${JSON.stringify(messages)} with context ${JSON.stringify(context)}`
-    );
+    const { streamId, startedAt } = createStreamSession({ messages, context });
 
     const mockResponse: ChatResponse = {
-      response: `Mock response to ${messages.length} messages`,
       cursor: messages[messages.length - 1].id,
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
+      streamId,
+      startedAt,
     };
     return NextResponse.json(mockResponse);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: `Error: ${error}`,
-      },
-      {
-        status: 400,
-      }
-    );
+    return NextResponse.json({ error: `Error: ${error}` }, { status: 400 });
   }
 }
