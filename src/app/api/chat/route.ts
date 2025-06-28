@@ -8,6 +8,13 @@ export interface ChatRequest {
   context: { card: Card };
 }
 
+export interface ChatResponse {
+  response: string;
+  cursor: string;
+  id: string;
+  timestamp: number;
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = (await req.json()) as ChatRequest;
@@ -34,9 +41,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       `Send to OpenAI: ${JSON.stringify(messages)} with context ${JSON.stringify(context)}`
     );
 
-    const mockResponse = {
+    const mockResponse: ChatResponse = {
       response: `Mock response to ${messages.length} messages`,
       cursor: messages[messages.length - 1].id,
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
     };
     return NextResponse.json(mockResponse);
   } catch (error) {

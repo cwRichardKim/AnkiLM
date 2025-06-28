@@ -55,15 +55,15 @@ export default function ChatContainer({
         } as ChatRequest),
       })
         .then(async (res) => {
-          const body = (await res.json()) as ChatResponse;
-          console.log(body);
+          const { response, id, timestamp } =
+            (await res.json()) as ChatResponse;
           // TODO: check the cursor and move optimistic messages at or before the cursor to pastMessages
           setPastMessages(allMessages);
           setStreamingMessage({
             role: "agent",
-            content: body.response,
-            id: body.id,
-            timestamp: body.timestamp,
+            content: response,
+            id,
+            timestamp,
           });
           setOptimisticMessages([]);
           setError(null);
