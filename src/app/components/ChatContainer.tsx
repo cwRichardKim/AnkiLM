@@ -1,46 +1,93 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { ChatRequest, ChatResponse } from "../api/chat/route";
 import { Card } from "../hooks/useCard";
 import Message, { MessageType } from "./Message";
 import Thread from "./Thread";
 
 export default function ChatContainer({
   card,
-  reviewCard,
 }: {
   card: Card;
-  reviewCard: (card: Card, rating: number) => void;
+  reviewCard: (card: Card, rating: number) => void; // TODO
 }) {
-  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [pastMessages, setPastMessages] = useState<MessageType[]>([]);
+  const [optimisticMessages, setOptimisticMessages] = useState<MessageType[]>(
+    []
+  );
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingMessage] = useState<MessageType | null>(null);
+  const [streamingMessage, setStreamingMessage] = useState<MessageType | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
+
   const sendMessage = useCallback(
     async (message: string) => {
       setInput("");
       setIsStreaming(true);
-      setMessages((prev) => [...prev, { role: "user", content: message }]);
+
+      // the message being sent
+      const newMessage = {
+        role: "user",
+        content: message,
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+      };
+      // queued messages that have not been confirmed by server yet
+      const newOptimisticMessages = [...optimisticMessages, newMessage];
+      // all messages in the UI
+      const allMessages = [...pastMessages, ...newOptimisticMessages];
+
+      setOptimisticMessages(newOptimisticMessages);
+
+      // setPastMessages((prev) => [...prev, { role: "user", content: message }]);
       fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: messages,
+          messages: allMessages,
+          context: { card },
           command: "explain",
-        }),
-      }).then((res) => {
-        console.log(res);
-      });
-      // send post request to /api/chat
-      // listen for streaming response
-      // set streaming response to streaming message
-      console.log(message);
+        } as ChatRequest),
+      })
+        .then(async (res) => {
+          const body = (await res.json()) as ChatResponse;
+          console.log(body);
+          // TODO: check the cursor and move optimistic messages at or before the cursor to pastMessages
+          setPastMessages(allMessages);
+          setStreamingMessage({
+            role: "agent",
+            content: body.response,
+            id: body.id,
+            timestamp: body.timestamp,
+          });
+          setOptimisticMessages([]);
+          setError(null);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(err.message);
+        })
+        .finally(() => {
+          setIsStreaming(false);
+        });
     },
-    [messages]
+    [optimisticMessages, pastMessages, card]
   );
-  console.log(card, reviewCard);
+
+  const messages = useMemo(
+    () => [
+      ...pastMessages,
+      ...optimisticMessages,
+      ...(streamingMessage ? [streamingMessage] : []),
+    ],
+    [pastMessages, optimisticMessages, streamingMessage]
+  );
+
   return (
     <div className="w-1/2 min-w-64 bg-gray-100 h-full">
       <div>ChatContainer</div>
@@ -53,6 +100,7 @@ export default function ChatContainer({
           send
         </Button>
       </div>
+      {error && <div className="text-red-500">{error}</div>}
     </div>
   );
 }
