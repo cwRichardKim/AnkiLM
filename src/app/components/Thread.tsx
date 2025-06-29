@@ -1,6 +1,24 @@
+import { useMemo } from "react";
 import Message, { MessageType } from "./Message";
 
-export default function Thread({ messages }: { messages: MessageType[] }) {
+export default function Thread({
+  pastMessages,
+  optimisticMessages,
+  streamingMessage,
+}: {
+  pastMessages: MessageType[];
+  optimisticMessages: MessageType[];
+  streamingMessage: MessageType | null;
+}) {
+  const messages = useMemo(
+    () =>
+      [
+        ...pastMessages,
+        ...optimisticMessages,
+        ...(streamingMessage ? [streamingMessage] : []),
+      ].filter((message) => message !== null),
+    [pastMessages, optimisticMessages, streamingMessage]
+  );
   return (
     <div>
       Thread ({messages.length} messages)

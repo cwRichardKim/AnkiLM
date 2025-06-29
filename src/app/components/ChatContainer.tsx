@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChatRequest } from "../api/chat/route";
 import { Card } from "../hooks/useCard";
-import Message, { MessageType } from "./Message";
+import { MessageType } from "./Message";
 import Thread from "./Thread";
 
 export default function ChatContainer({
@@ -22,14 +22,25 @@ export default function ChatContainer({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // Cleanup streaming state when card changes
+  useEffect(() => {
+    setStreamingMessage(null);
+    setOptimisticMessages([]);
+    setError(null);
+  }, [card]);
 
   const sendMessage = useCallback(
     async (message: string) => {
+      if (!message.trim()) return; // Don't send empty messages
+
       setInput("");
       setIsStreaming(true);
+      setError(null); // Clear previous errors
 
       // the message being sent
-      const newMessage = {
+      const newMessage: MessageType = {
         role: "user",
         content: message,
         id: crypto.randomUUID(),
@@ -41,8 +52,6 @@ export default function ChatContainer({
       const allMessages = [...pastMessages, ...newOptimisticMessages];
 
       setOptimisticMessages(newOptimisticMessages);
-
-      // setPastMessages((prev) => [...prev, { role: "user", content: message }]);
       fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -58,8 +67,15 @@ export default function ChatContainer({
           const reader = res.body?.getReader();
           if (!reader) throw new Error("No reader");
           const decoder = new TextDecoder();
-          let content = "";
           let buffer = "";
+          let confirmedCursor: string | null = null;
+
+          const newStreamingMessage: MessageType = {
+            role: "agent",
+            content: "",
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+          };
 
           while (true) {
             const { done, value } = await reader.read();
@@ -68,7 +84,6 @@ export default function ChatContainer({
             buffer += decoder.decode(value, { stream: true });
 
             // Split on event delimiter (double newline)
-            // This is safe because the delimiter is outside the JSON content
             const events = buffer.split("\n\n");
             buffer = events.pop() || ""; // Keep incomplete event in buffer
 
@@ -76,28 +91,22 @@ export default function ChatContainer({
               if (event.startsWith("data: ")) {
                 try {
                   const json = JSON.parse(event.slice(6));
-                  console.log("Parsed event:", json);
 
                   switch (json.type) {
                     case "metadata":
-                      console.log(
-                        "Stream started at:",
-                        json.startedAt,
-                        "cursor:",
-                        json.cursor
-                      );
+                      newStreamingMessage.timestamp = json.startedAt;
+                      confirmedCursor = json.cursor;
                       break;
                     case "content":
-                      content += json.content;
-                      console.log("Content updated:", content);
+                      newStreamingMessage.content += json.content;
                       break;
                     case "done":
-                      console.log("Stream completed");
                       break;
                     case "error":
                       console.error("Stream error:", json.error);
                       break;
                   }
+                  setStreamingMessage({ ...newStreamingMessage });
                 } catch (parseError) {
                   console.error(
                     "Failed to parse SSE event:",
@@ -109,30 +118,26 @@ export default function ChatContainer({
             }
           }
 
-          setPastMessages(allMessages);
-          // setStreamingMessage({
-          //   role: "agent",
-          //   content: response,
-          //   id,
-          //   timestamp,
-          // });
-          // setOptimisticMessages((prev) => {
-          //   const indexAtCursor = prev.findIndex(
-          //     (message) => message.id === cursor
-          //   );
-          //   if (indexAtCursor === -1) {
-          //     throw new Error(
-          //       `Cursor not found in optimistic messages: ${cursor}, ${JSON.stringify(prev)}`
-          //     );
-          //   }
-          //   return prev.slice(0, indexAtCursor);
-          // });
-          setOptimisticMessages([]);
+          setPastMessages([...allMessages, newStreamingMessage]);
+          setStreamingMessage(null);
+          setOptimisticMessages((prev) => {
+            const indexAtCursor = prev.findIndex(
+              (message) => message.id === confirmedCursor
+            );
+            if (indexAtCursor === -1) {
+              throw new Error(
+                `Cursor not found in optimistic messages: ${confirmedCursor}, ${JSON.stringify(prev)}`
+              );
+            }
+            return prev.slice(0, indexAtCursor);
+          });
           setError(null);
         })
         .catch((err) => {
           console.error(err);
-          setError(err.message);
+          setError(err.message || "Failed to send message");
+          // Remove the optimistic message on error
+          setOptimisticMessages((prev) => prev.slice(0, -1));
         })
         .finally(() => {
           setIsStreaming(false);
@@ -141,35 +146,62 @@ export default function ChatContainer({
     [optimisticMessages, pastMessages, card]
   );
 
-  const messages = useMemo(
-    () => [
-      ...pastMessages,
-      ...optimisticMessages,
-      ...(streamingMessage ? [streamingMessage] : []),
-    ],
-    [pastMessages, optimisticMessages, streamingMessage]
+  const retryMessage = useCallback(() => {
+    if (error && optimisticMessages.length > 0) {
+      const lastMessage = optimisticMessages[optimisticMessages.length - 1];
+      setIsRetrying(true);
+      sendMessage(lastMessage.content).finally(() => setIsRetrying(false));
+    }
+  }, [error, optimisticMessages, sendMessage]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (input.trim() && !isStreaming) {
+          sendMessage(input);
+        }
+      }
+    },
+    [input, isStreaming, sendMessage]
   );
 
-  const clearServerSessions = useCallback(() => {
-    fetch("/api/chat/stream?sessionId=*", {
-      method: "DELETE",
-    });
-  }, []);
-
   return (
-    <div className="w-1/2 min-w-64 bg-gray-100 h-full">
+    <div className="w-1/2 min-w-64 bg-gray-100 h-full p-4">
       <div>ChatContainer</div>
-      <Thread messages={messages} />
-      <div>Streaming message</div>
-      {streamingMessage && <Message message={streamingMessage} />}
+      <Thread
+        pastMessages={pastMessages}
+        optimisticMessages={optimisticMessages}
+        streamingMessage={streamingMessage}
+      />
       <div>
-        <Textarea value={input} onChange={(e) => setInput(e.target.value)} />
-        <Button disabled={isStreaming} onClick={() => sendMessage(input)}>
-          send
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          disabled={isStreaming}
+        />
+        <Button
+          disabled={isStreaming || !input.trim()}
+          onClick={() => sendMessage(input)}
+        >
+          {isStreaming ? "Sending..." : "Send"}
         </Button>
-        <Button onClick={clearServerSessions}>Clear server sessions</Button>
       </div>
-      {error && <div className="text-red-500">{error}</div>}
+      {error && (
+        <div className="text-red-500 flex items-center gap-2">
+          <span>{error}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={retryMessage}
+            disabled={isRetrying}
+          >
+            {isRetrying ? "Retrying..." : "Retry"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
