@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useCallback, useMemo, useState } from "react";
-import { ChatRequest, ChatResponse } from "../api/chat/route";
+import { ChatRequest } from "../api/chat/route";
 import { Card } from "../hooks/useCard";
 import Message, { MessageType } from "./Message";
 import Thread from "./Thread";
@@ -55,8 +55,60 @@ export default function ChatContainer({
         } as ChatRequest),
       })
         .then(async (res) => {
-          const { streamId, startedAt, cursor } =
-            (await res.json()) as ChatResponse;
+          const reader = res.body?.getReader();
+          if (!reader) throw new Error("No reader");
+          const decoder = new TextDecoder();
+          let content = "";
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Split on event delimiter (double newline)
+            // This is safe because the delimiter is outside the JSON content
+            const events = buffer.split("\n\n");
+            buffer = events.pop() || ""; // Keep incomplete event in buffer
+
+            for (const event of events) {
+              if (event.startsWith("data: ")) {
+                try {
+                  const json = JSON.parse(event.slice(6));
+                  console.log("Parsed event:", json);
+
+                  switch (json.type) {
+                    case "metadata":
+                      console.log(
+                        "Stream started at:",
+                        json.startedAt,
+                        "cursor:",
+                        json.cursor
+                      );
+                      break;
+                    case "content":
+                      content += json.content;
+                      console.log("Content updated:", content);
+                      break;
+                    case "done":
+                      console.log("Stream completed");
+                      break;
+                    case "error":
+                      console.error("Stream error:", json.error);
+                      break;
+                  }
+                } catch (parseError) {
+                  console.error(
+                    "Failed to parse SSE event:",
+                    event,
+                    parseError
+                  );
+                }
+              }
+            }
+          }
+
           setPastMessages(allMessages);
           // setStreamingMessage({
           //   role: "agent",
@@ -64,17 +116,18 @@ export default function ChatContainer({
           //   id,
           //   timestamp,
           // });
-          setOptimisticMessages((prev) => {
-            const indexAtCursor = prev.findIndex(
-              (message) => message.id === cursor
-            );
-            if (indexAtCursor === -1) {
-              throw new Error(
-                `Cursor not found in optimistic messages: ${cursor}, ${JSON.stringify(prev)}`
-              );
-            }
-            return prev.slice(0, indexAtCursor);
-          });
+          // setOptimisticMessages((prev) => {
+          //   const indexAtCursor = prev.findIndex(
+          //     (message) => message.id === cursor
+          //   );
+          //   if (indexAtCursor === -1) {
+          //     throw new Error(
+          //       `Cursor not found in optimistic messages: ${cursor}, ${JSON.stringify(prev)}`
+          //     );
+          //   }
+          //   return prev.slice(0, indexAtCursor);
+          // });
+          setOptimisticMessages([]);
           setError(null);
         })
         .catch((err) => {
