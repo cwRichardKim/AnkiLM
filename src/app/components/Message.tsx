@@ -11,7 +11,7 @@ export default function Message({ message }: { message: MessageType }) {
   const isUser = message.role === "user";
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <Card className="p-4">
+      <Card className="p-4 max-w-9/10 mb-4 gap-2">
         <div className="flex items-center gap-2">
           <b>{isUser ? "You" : "AnkiLM"}</b>
           <span className="text-xs text-gray-500">

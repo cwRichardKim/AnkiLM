@@ -1,19 +1,21 @@
-import { useState } from "react";
 import { Card } from "../hooks/useCard";
 
 export default function CardContainer({
   card,
   reviewCard,
+  backHidden,
+  revealBack,
 }: {
   card: Card;
   reviewCard: (card: Card, rating: number) => void;
+  backHidden: boolean;
+  revealBack: () => void;
 }) {
-  const [showBack, setShowBack] = useState(false);
   return (
     <div className="w-1/2 min-w-64 bg-gray-200 h-full">
       <div>{card.front}</div>
-      <div>{showBack && card.back}</div>
-      {showBack ? (
+      {!backHidden && <div>{card.back}</div>}
+      {!backHidden ? (
         <div>
           <button onClick={() => reviewCard(card, 1)}>Again</button>
           <button onClick={() => reviewCard(card, 2)}>Hard</button>
@@ -21,7 +23,7 @@ export default function CardContainer({
           <button onClick={() => reviewCard(card, 4)}>Easy</button>
         </div>
       ) : (
-        <button onClick={() => setShowBack(true)}>Flip</button>
+        <button onClick={() => revealBack()}>Flip</button>
       )}
     </div>
   );

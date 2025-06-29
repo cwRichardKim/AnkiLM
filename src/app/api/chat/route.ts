@@ -6,7 +6,7 @@ import OpenAI from "openai";
 export interface ChatRequest {
   messages: MessageType[];
   command: "explain" | "review";
-  context: { card: Card };
+  context: { card: Card; backHidden: boolean };
 }
 
 export interface ChatResponse {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 function constructInput(
   messages: MessageType[],
-  context: { card: Card },
+  context: { card: Card; backHidden: boolean },
   command: ChatRequest["command"]
 ) {
   // TODO: do something with command (pull from prompt registry or something)
@@ -146,10 +146,13 @@ function constructInput(
   // TODO: make this dynamic
   const commandPrompt = `You've been asked to help the user understand the card`;
   const contextPrompt = `Context:\nAnki Card:\nFront:\n${context.card.front}\n---\nBack:\n${context.card.back}\n`;
+  const hiddenContext = context.backHidden
+    ? `The back of the card is currently hidden from the user. Do not reveal the information directly unless the user asks for it.`
+    : `The back of the card is currently visible to the user.`;
   const conversation = messages.reduce(
     (acc, message) => acc.concat(`${message.role}: ${message.content}\n`),
     ""
   );
   const messagesPrompt = `Conversation:\n${conversation}`;
-  return `${systemPrompt}\n${commandPrompt}\n${contextPrompt}\n${messagesPrompt}`;
+  return `${systemPrompt}\n${commandPrompt}\n${contextPrompt}\n${hiddenContext}\n${messagesPrompt}`;
 }
