@@ -2,6 +2,7 @@ import { MessageType } from "@/app/components/Message";
 import { Card } from "@/app/hooks/useCard";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createOpenAI } from "@/lib/openai";
 
 export interface ChatRequest {
   messages: MessageType[];
@@ -47,9 +48,6 @@ function normalizeRealtimeChunk(chunk: OpenAI.Responses.ResponseStreamEvent) {
   }
 }
 
-export function createOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY_LOCAL });
-}
 
 export async function handleChat(
   req: NextRequest,
