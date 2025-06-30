@@ -47,79 +47,79 @@ function normalizeRealtimeChunk(chunk: OpenAI.Responses.ResponseStreamEvent) {
   }
 }
 
+export function createOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY_LOCAL });
+}
+
+export async function handleChat(
+  req: NextRequest,
+  openAI: OpenAI
+): Promise<NextResponse> {
+  const body = (await req.json()) as ChatRequest;
+  const { messages, command, context } = body;
+
+  if (messages.length === 0) throw new Error("No messages provided");
+  if (messages[messages.length - 1].role !== "user") {
+    throw new Error("Last message must be from user");
+  }
+
+  const input = constructInput(messages, context, command);
+  const stream = await openAI.responses.create({
+    model: "gpt-4o-mini",
+    input,
+    stream: true,
+  });
+
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        const metadata: ChatResponseChunk = {
+          type: "metadata",
+          startedAt: Date.now(),
+          cursor: messages[messages.length - 1].id,
+        };
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(metadata)}\n\n`));
+
+        for await (const chunk of stream) {
+          const normalizedChunk = normalizeRealtimeChunk(chunk);
+          if (normalizedChunk.done) {
+            const doneEvent: ChatResponseChunk = { type: "done" };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(doneEvent)}\n\n`));
+            controller.close();
+          } else {
+            const contentEvent: ChatResponseChunk = {
+              type: "content",
+              content: normalizedChunk.content,
+            };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(contentEvent)}\n\n`));
+          }
+        }
+      } catch (error) {
+        const errorEvent: ChatResponseChunk = {
+          type: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
+        controller.error(error);
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new NextResponse(readableStream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+    },
+  });
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const body = (await req.json()) as ChatRequest;
-    const { messages, command, context } = body;
-
-    if (messages.length === 0) throw new Error("No messages provided");
-    if (messages[messages.length - 1].role !== "user") {
-      throw new Error("Last message must be from user");
-    }
-
-    const input = constructInput(messages, context, command);
-    const openAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_LOCAL });
-    const stream = await openAI.responses.create({
-      model: "gpt-4o-mini",
-      input,
-      stream: true,
-    });
-
-    const encoder = new TextEncoder();
-
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Send metadata as first SSE event
-          const metadata: ChatResponseChunk = {
-            type: "metadata",
-            startedAt: Date.now(),
-            cursor: messages[messages.length - 1].id,
-          };
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(metadata)}\n\n`)
-          );
-
-          for await (const chunk of stream) {
-            const normalizedChunk = normalizeRealtimeChunk(chunk);
-            if (normalizedChunk.done) {
-              const doneEvent: ChatResponseChunk = { type: "done" };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(doneEvent)}\n\n`)
-              );
-              controller.close();
-            } else {
-              // Send content chunk
-              const contentEvent: ChatResponseChunk = {
-                type: "content",
-                content: normalizedChunk.content,
-              };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(contentEvent)}\n\n`)
-              );
-            }
-          }
-        } catch (error) {
-          // Send error event
-          const errorEvent: ChatResponseChunk = {
-            type: "error",
-            error: error instanceof Error ? error.message : String(error),
-          };
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`)
-          );
-          controller.error(error);
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new NextResponse(readableStream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-      },
-    });
+    const openAI = createOpenAI();
+    return await handleChat(req, openAI);
   } catch (error) {
     return NextResponse.json({ error: `Error: ${error}` }, { status: 400 });
   }
