@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleChat } from '../src/app/api/chat/route.ts';
+import { handleChat } from '../src/lib/chat.ts';
 
 function createMockOpenAI() {
   return {
