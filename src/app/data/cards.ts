@@ -3,33 +3,9 @@ import { Card } from "../hooks/useCard";
 export const cards: Card[] = [
   {
     id: "card-1",
-    front: "What does HTML stand for?",
-    back: "HyperText Markup Language",
-  },
-  {
-    id: "card-2",
-    front: "What is the primary purpose of CSS?",
-    back: "Styling and layout of web pages",
-  },
-  {
-    id: "card-3",
-    front: "What is a closure in JavaScript?",
-    back: "A function that has access to variables in its outer scope",
-  },
-  {
-    id: "card-4",
-    front: "What is the difference between let and var in JavaScript?",
-    back: "let has block scope, var has function scope",
-  },
-  {
-    id: "card-5",
-    front: "What is the purpose of the 'use strict' directive?",
-    back: "To enable strict mode which catches common coding mistakes",
-  },
-  {
-    id: "card-6",
-    front: "Reverse index",
-    back: `\`\`\`ts
+    front:
+      "Backend: Create a schema for scoring and ranking an autocomplete term over Help articles and Listings",
+    back: `Reverse index: \n\`\`\`ts
 {
   term: string;
   postings: Array [{
@@ -43,6 +19,82 @@ export const cards: Card[] = [
     data: { /* optional type-specific data */ }
   }]
 }
+\`\`\``,
+  },
+  {
+    id: "card-2",
+    front:
+      "Backend: A relational database is being overwhelmed by writes, what steps would you take to resolve the issue?",
+    back: `### **1. Optimize First (Low-hanging fruit)**
+- **Batch writes**: Combine multiple inserts into single transactions
+- **Remove unnecessary indexes**: Each index slows writes
+- **Optimize queries**: Remove N+1 queries, use prepared statements
+- **Connection pooling**: Reduce connection overhead
+
+### **2. Scale Vertically (Quick wins)**
+- **Faster storage**: SSD → NVMe, increase IOPS
+- **More memory**: Reduce disk writes through larger buffers
+- **Better CPU**: Handle more concurrent writes
+
+### **3. Read/Write Separation**
+- **Read replicas**: Offload read queries to replicas
+- **Write to primary only**: Reduces contention on main DB
+- **Application routing**: Smart load balancing between read/write
+
+### **4. Horizontal Scaling (Long-term)**
+- **Sharding**: Partition data across multiple databases
+- **Different storage per use case**: 
+  - Hot data → In-memory (Redis)
+  - Write-heavy → NoSQL (Cassandra, DynamoDB)
+  - Analytics → Data warehouse (BigQuery)
+
+### **5. Architectural Changes**
+- **Async processing**: Queue writes, process in batches
+- **Event sourcing**: Store events instead of current state
+- **CQRS**: Separate read/write models entirely
+
+### **Key Decision Framework**: Start with #1-2, move to #3-4 only when necessary. Don't skip to complex solutions without trying simple optimizations first.`,
+  },
+  {
+    id: "card-3",
+    front: "Why can't you just always use WebSockets?",
+    back: `WebSockets require:
+
+Load balancers or proxies that support connection upgrade
+Explicit connection management (retries, heartbeats, backoff)
+More backend infra (stateful handlers, horizontal scaling)
+
+Principle: WebSockets are power tools — not default tools.`,
+  },
+  {
+    // for /answer-code testing
+    id: "card-4",
+    front:
+      "Given two strings, return the minimum edit distance (insertions, deletions, substitutions) needed to transform one into the other.",
+    back: `Intuition: the solution to the problem can be built from solutions to smaller sub problems. "Can the minimal edits to get from s1[:i] to s2[:j] help me compute the edits for s1[:i+1] to s2[:j+1]
+
+\`\`\`python
+def min_edit_distance(s1: str, s2: str) -> int:
+  m, n = len(s1) len(s2)
+  dp = [[0] * (n+1) for _ in range(m+1)]
+
+  # Initialize base cases
+  for i in range(m+1):
+    dp[i][0] = i # delete all characters from s1
+  for j in range(n+1):
+    dp[0][j] = j # insert all characters into s1
+  # fill the dp table
+  for i in range(1, m+1):
+    for j in range(1, n+1):
+      if (s1[i-1] == s2[j-1]:
+        dp[i][j] = dp[i-1][j-1] # characters match, no moves
+      else:
+        dp[i][j] = 1 + min(
+          dp[i-1][j], # deletion
+          dp[i][j-1], # insertion
+          dp[i-1][j-1] # substitution
+        )
+  return dp[m][n]
 \`\`\``,
   },
 ];
