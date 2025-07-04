@@ -16,14 +16,20 @@ export default function CardContainer({
   return (
     <div className="w-1/2 min-w-64 bg-gray-200 h-full">
       <div className="flex flex-col gap-4 m-4">
-        <Card className={`p-4 gap-4 ${backHidden ? "" : "bg-gray-100"}`}>
+        <Card className={`p-4 gap-0`}>
           {card.front}
-          {!backHidden && (
-            <>
-              <div className="w-full h-px bg-gray-300" />
+          <div
+            className={`grid transition-all duration-200 ease-in-out ${
+              backHidden
+                ? "grid-rows-[0fr] opacity-0"
+                : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="w-full h-px bg-gray-300 my-4" />
               {card.back}
-            </>
-          )}
+            </div>
+          </div>
         </Card>
         <div className="flex flex-row gap-2 justify-center">
           {!backHidden
