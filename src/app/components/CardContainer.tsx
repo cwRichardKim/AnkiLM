@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useEffect } from "react";
 import { CardType } from "../hooks/useCard";
 
 export default function CardContainer({
@@ -7,12 +8,78 @@ export default function CardContainer({
   reviewCard,
   backHidden,
   revealBack,
+  isFocused,
 }: {
   card: CardType;
   reviewCard: (card: CardType, rating: number) => void;
   backHidden: boolean;
   revealBack: () => void;
+  isFocused: boolean;
 }) {
+  // Handle card keyboard shortcuts when focused
+  useEffect(() => {
+    if (!isFocused) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle shortcuts if no input element is focused
+      const activeElement = document.activeElement;
+      if (
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA" ||
+        (activeElement instanceof HTMLElement &&
+          activeElement.contentEditable === "true")
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          if (backHidden) {
+            revealBack();
+          } else {
+            reviewCard(card, 3); // Good
+          }
+          break;
+        case "1":
+          e.preventDefault();
+          if (!backHidden) {
+            reviewCard(card, 1); // Again
+          }
+          break;
+        case "2":
+          e.preventDefault();
+          if (!backHidden) {
+            reviewCard(card, 2); // Hard
+          }
+          break;
+        case "3":
+          e.preventDefault();
+          if (!backHidden) {
+            reviewCard(card, 3); // Good
+          }
+          break;
+        case "4":
+          e.preventDefault();
+          if (!backHidden) {
+            reviewCard(card, 4); // Easy
+          }
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (backHidden) {
+            revealBack();
+          } else {
+            reviewCard(card, 3); // Good
+          }
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isFocused, backHidden, card, reviewCard, revealBack]);
+
   return (
     <div className="w-full h-full">
       <div className="flex flex-col gap-4 m-4">

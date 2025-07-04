@@ -40,65 +40,6 @@ export default function ReviewLayout({
     }
   };
 
-  // Handle card keyboard shortcuts when card panel is focused
-  const handleCardKeyDown = (e: KeyboardEvent) => {
-    if (focusedPanel !== "card") return;
-
-    // Only handle shortcuts if no input element is focused
-    const activeElement = document.activeElement;
-    if (
-      activeElement?.tagName === "INPUT" ||
-      activeElement?.tagName === "TEXTAREA" ||
-      (activeElement instanceof HTMLElement &&
-        activeElement.contentEditable === "true")
-    ) {
-      return;
-    }
-
-    switch (e.key) {
-      case " ":
-        e.preventDefault();
-        if (backHidden) {
-          revealBack();
-        } else {
-          reviewCard(card, 3); // Good
-        }
-        break;
-      case "1":
-        e.preventDefault();
-        if (!backHidden) {
-          reviewCard(card, 1); // Again
-        }
-        break;
-      case "2":
-        e.preventDefault();
-        if (!backHidden) {
-          reviewCard(card, 2); // Hard
-        }
-        break;
-      case "3":
-        e.preventDefault();
-        if (!backHidden) {
-          reviewCard(card, 3); // Good
-        }
-        break;
-      case "4":
-        e.preventDefault();
-        if (!backHidden) {
-          reviewCard(card, 4); // Easy
-        }
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (backHidden) {
-          revealBack();
-        } else {
-          reviewCard(card, 3); // Good
-        }
-        break;
-    }
-  };
-
   // Focus chat input when chat panel is focused
   useEffect(() => {
     if (focusedPanel === "chat" && chatInputRef.current) {
@@ -112,13 +53,11 @@ export default function ReviewLayout({
   // Add global keyboard listeners
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keydown", handleCardKeyDown);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keydown", handleCardKeyDown);
     };
-  }, [focusedPanel, backHidden, card]);
+  }, [focusedPanel]);
 
   const handleCardClick = () => {
     setFocusedPanel("card");
@@ -147,6 +86,7 @@ export default function ReviewLayout({
           reviewCard={reviewCard}
           backHidden={backHidden}
           revealBack={revealBack}
+          isFocused={focusedPanel === "card"}
         />
       </div>
 
