@@ -1,6 +1,6 @@
-import { Card } from "../hooks/useCard";
+import { CardType } from "../hooks/useCard";
 
-export const cards: Card[] = [
+export const cards: CardType[] = [
   {
     id: "card-1",
     front:

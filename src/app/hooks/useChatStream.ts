@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { ChatRequest } from "../api/chat/route";
 import { MessageType } from "../components/Message";
-import { Card } from "./useCard";
+import { CardType } from "./useCard";
 
 interface UseChatStreamProps {
-  card: Card;
+  card: CardType;
   backHidden: boolean;
 }
 

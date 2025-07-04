@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card } from "../hooks/useCard";
+import { CardType } from "../hooks/useCard";
 import { useChatStream } from "../hooks/useChatStream";
 import ChatError from "./ChatError";
 import ChatInput from "./ChatInput";
@@ -9,8 +9,8 @@ export default function ChatContainer({
   card,
   backHidden,
 }: {
-  card: Card;
-  reviewCard: (card: Card, rating: number) => void; // TODO
+  card: CardType;
+  reviewCard: (card: CardType, rating: number) => void; // TODO
   backHidden: boolean;
 }) {
   const [input, setInput] = useState("");

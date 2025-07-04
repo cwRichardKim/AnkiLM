@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { cards } from "../data/cards";
 
-export interface Card {
+export interface CardType {
   id: string;
   front: string;
   back: string;
@@ -9,7 +9,7 @@ export interface Card {
 
 export default function useCard(
   deckId: string
-): [Card | null, (card: Card, rating: number) => void] {
+): [CardType | null, (card: CardType, rating: number) => void] {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function useCard(
     setCurrentCardIndex(0);
   }, [deckId]);
 
-  const reviewCard = (card: Card, rating: number) => {
+  const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
 
     // Move to next card

@@ -1,12 +1,12 @@
 import { MessageType } from "@/app/components/Message";
-import { Card } from "@/app/hooks/useCard";
+import { CardType } from "@/app/hooks/useCard";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export interface ChatRequest {
   messages: MessageType[];
   command: "explain" | "review";
-  context: { card: Card; backHidden: boolean };
+  context: { card: CardType; backHidden: boolean };
 }
 
 export interface ChatResponse {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 function constructInput(
   messages: MessageType[],
-  context: { card: Card; backHidden: boolean },
+  context: { card: CardType; backHidden: boolean },
   command: ChatRequest["command"]
 ) {
   // TODO: do something with command (pull from prompt registry or something)
