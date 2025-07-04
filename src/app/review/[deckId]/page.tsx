@@ -1,7 +1,6 @@
 "use client";
 import { use, useState } from "react";
-import CardContainer from "../../components/CardContainer";
-import ChatContainer from "../../components/ChatContainer";
+import ReviewLayout from "../../components/ReviewLayout";
 import useCard from "../../hooks/useCard";
 
 export default function ReviewPage({
@@ -27,19 +26,12 @@ export default function ReviewPage({
   return (
     <div>
       ReviewPage {deckId}
-      <div className="flex flex-row w-full h-screen">
-        <CardContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-          revealBack={() => setBackHidden(false)}
-        />
-        <ChatContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-        />
-      </div>
+      <ReviewLayout
+        card={card}
+        reviewCard={reviewCard}
+        backHidden={backHidden}
+        revealBack={() => setBackHidden(false)}
+      />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default function CardContainer({
   revealBack: () => void;
 }) {
   return (
-    <div className="w-1/2 min-w-64 bg-gray-200 h-full">
+    <div className="w-full h-full">
       <div className="flex flex-col gap-4 m-4">
         <Card className={`p-4 gap-0`}>
           {card.front}
