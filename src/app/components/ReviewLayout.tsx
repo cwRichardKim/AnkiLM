@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CardType } from "../hooks/useCard";
 import CardContainer from "./CardContainer";
 import ChatContainer from "./ChatContainer";
@@ -25,20 +25,23 @@ export default function ReviewLayout({
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Handle Tab key navigation
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const newPanel = focusedPanel === "card" ? "chat" : "card";
-      setFocusedPanel(newPanel);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const newPanel = focusedPanel === "card" ? "chat" : "card";
+        setFocusedPanel(newPanel);
 
-      // Focus the appropriate container
-      if (newPanel === "card" && cardContainerRef.current) {
-        cardContainerRef.current.focus();
-      } else if (newPanel === "chat" && chatContainerRef.current) {
-        chatContainerRef.current.focus();
+        // Focus the appropriate container
+        if (newPanel === "card" && cardContainerRef.current) {
+          cardContainerRef.current.focus();
+        } else if (newPanel === "chat" && chatContainerRef.current) {
+          chatContainerRef.current.focus();
+        }
       }
-    }
-  };
+    },
+    [focusedPanel, cardContainerRef, chatContainerRef]
+  );
 
   // Focus chat input when chat panel is focused
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function ReviewLayout({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [focusedPanel]);
+  }, [focusedPanel, handleKeyDown]);
 
   const handleCardClick = () => {
     setFocusedPanel("card");
@@ -75,10 +78,10 @@ export default function ReviewLayout({
         onClick={handleCardClick}
         tabIndex={0}
         onFocus={() => setFocusedPanel("card")}
-        className={`w-1/2 min-w-64 bg-gray-200 h-full transition-all duration-300 cursor-pointer relative outline-none ${
+        className={`w-1/2 min-w-64  h-full transition-all duration-300 cursor-pointer relative outline-none ${
           focusedPanel === "card"
-            ? "z-10 shadow-lg ring-2 ring-blue-400 ring-opacity-60"
-            : "z-0 opacity-85 hover:opacity-95"
+            ? "z-10 shadow-lg bg-gray-100"
+            : "z-0 bg-gray-200"
         }`}
       >
         <CardContainer
@@ -96,10 +99,10 @@ export default function ReviewLayout({
         onClick={handleChatClick}
         tabIndex={0}
         onFocus={() => setFocusedPanel("chat")}
-        className={`w-1/2 min-w-64 bg-gray-100 h-full transition-all duration-300 cursor-pointer relative outline-none ${
+        className={`w-1/2 min-w-64 h-full transition-all duration-300 cursor-pointer relative outline-none ${
           focusedPanel === "chat"
-            ? "z-10 shadow-lg ring-2 ring-blue-400 ring-opacity-60"
-            : "z-0 opacity-85 hover:opacity-95"
+            ? "z-10 shadow-lg bg-gray-100"
+            : "z-0 bg-gray-200"
         }`}
       >
         <ChatContainer

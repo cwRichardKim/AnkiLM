@@ -98,43 +98,48 @@ export default function CardContainer({
             </div>
           </div>
         </Card>
-        <div className="flex flex-row gap-2 justify-center">
-          {!backHidden
-            ? [
-                <Button
-                  key="again"
-                  className="bg-red-500 hover:bg-red-600 text-white"
-                  onClick={() => reviewCard(card, 1)}
-                >
-                  Again (1)
-                </Button>,
-                <Button
-                  key="hard"
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                  onClick={() => reviewCard(card, 2)}
-                >
-                  Hard (2)
-                </Button>,
-                <Button
-                  key="good"
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                  onClick={() => reviewCard(card, 3)}
-                >
-                  Good (3 / Space)
-                </Button>,
-                <Button
-                  key="easy"
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                  onClick={() => reviewCard(card, 4)}
-                >
-                  Easy (4)
-                </Button>,
-              ]
-            : [
-                <Button key="flip" onClick={() => revealBack()}>
-                  Flip (space)
-                </Button>,
-              ]}
+        <div className="flex justify-center">
+          <div className="flex flex-row gap-2 relative p-2">
+            {isFocused && (
+              <div className="absolute inset-0 ring-2 ring-blue-200 rounded-lg pointer-events-none" />
+            )}
+            {!backHidden
+              ? [
+                  <Button
+                    key="again"
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                    onClick={() => reviewCard(card, 1)}
+                  >
+                    Again (1)
+                  </Button>,
+                  <Button
+                    key="hard"
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={() => reviewCard(card, 2)}
+                  >
+                    Hard (2)
+                  </Button>,
+                  <Button
+                    key="good"
+                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    onClick={() => reviewCard(card, 3)}
+                  >
+                    Good (3 / Space)
+                  </Button>,
+                  <Button
+                    key="easy"
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                    onClick={() => reviewCard(card, 4)}
+                  >
+                    Easy (4)
+                  </Button>,
+                ]
+              : [
+                  <Button key="flip" onClick={() => revealBack()}>
+                    Flip (space)
+                  </Button>,
+                ]}
+          </div>
         </div>
       </div>
     </div>
