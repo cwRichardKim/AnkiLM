@@ -24,21 +24,16 @@ export default function useCard(deckId: string): {
   const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
 
-    // Hide the back content immediately
+    // Move to next card and ensure back is hidden
+    // Both state updates happen simultaneously to avoid animation issues
     setBackHidden(true);
-
-    // Delay the card change to allow the animation to complete
-    // The animation duration is 200ms, so we wait 250ms to be safe
-    setTimeout(() => {
-      // Move to next card
-      if (currentCardIndex < cards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1);
-      } else {
-        // End of deck - could reset or show completion message
-        console.log("End of deck reached");
-        setCurrentCardIndex(0);
-      }
-    }, 250);
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+    } else {
+      // End of deck - could reset or show completion message
+      console.log("End of deck reached");
+      setCurrentCardIndex(0);
+    }
   };
 
   const currentCard = cards[currentCardIndex] || null;

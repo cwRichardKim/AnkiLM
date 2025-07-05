@@ -83,7 +83,7 @@ export default function CardContainer({
   return (
     <div className="w-full h-full">
       <div className="flex flex-col gap-4 m-4">
-        <Card className={`p-4 gap-0`}>
+        <Card key={card.id} className={`p-4 gap-0`}>
           {card.front}
           <div
             className={`grid transition-all duration-200 ease-in-out ${
