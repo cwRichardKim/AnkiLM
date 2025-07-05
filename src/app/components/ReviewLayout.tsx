@@ -71,14 +71,14 @@ export default function ReviewLayout({
   };
 
   return (
-    <div className="flex flex-row w-full h-screen relative">
+    <div className="flex flex-row w-full px-4">
       {/* Card Container */}
       <div
         ref={cardContainerRef}
         onClick={handleCardClick}
         tabIndex={0}
         onFocus={() => setFocusedPanel("card")}
-        className={`w-1/2 min-w-64  h-full transition-all duration-300 relative outline-none ${
+        className={`w-1/2 min-w-64  h-full transition-all duration-200 relative outline-none ${
           focusedPanel === "card"
             ? "z-10 shadow-lg bg-gray-100"
             : "z-0 bg-gray-200"
@@ -99,7 +99,7 @@ export default function ReviewLayout({
         onClick={handleChatClick}
         tabIndex={0}
         onFocus={() => setFocusedPanel("chat")}
-        className={`w-1/2 min-w-64 h-full transition-all duration-300 relative outline-none ${
+        className={`w-1/2 min-w-64 h-full transition-all duration-200 relative outline-none ${
           focusedPanel === "chat"
             ? "z-10 shadow-lg bg-gray-100"
             : "z-0 bg-gray-200"
