@@ -16,9 +16,6 @@ export default function useCard(deckId: string): {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [backHidden, setBackHidden] = useState(true);
 
-  // Just use the original cards for now
-  const currentDeckCards = cards;
-
   useEffect(() => {
     // Reset to first card when deckId changes
     setCurrentCardIndex(0);
@@ -27,7 +24,7 @@ export default function useCard(deckId: string): {
   const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
     setBackHidden(true);
-    if (currentCardIndex < currentDeckCards.length - 1) {
+    if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
       // End of deck - reset to beginning
@@ -36,7 +33,7 @@ export default function useCard(deckId: string): {
     }
   };
 
-  const currentCard = currentDeckCards[currentCardIndex] || null;
+  const currentCard = cards[currentCardIndex] || null;
 
   return {
     currentCard,
