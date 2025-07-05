@@ -7,10 +7,14 @@ export interface CardType {
   back: string;
 }
 
-export default function useCard(
-  deckId: string
-): [CardType | null, (card: CardType, rating: number) => void] {
+export default function useCard(deckId: string): {
+  currentCard: CardType | null;
+  reviewCard: (card: CardType, rating: number) => void;
+  backHidden: boolean;
+  setBackHidden: (backHidden: boolean) => void;
+} {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [backHidden, setBackHidden] = useState(true);
 
   useEffect(() => {
     // Reset to first card when deckId changes
@@ -26,11 +30,12 @@ export default function useCard(
     } else {
       // End of deck - could reset or show completion message
       console.log("End of deck reached");
-      setCurrentCardIndex(0); // Reset to beginning for now
+      setCurrentCardIndex(0);
     }
+    setBackHidden(true);
   };
 
   const currentCard = cards[currentCardIndex] || null;
 
-  return [currentCard, reviewCard];
+  return { currentCard, reviewCard, backHidden, setBackHidden };
 }

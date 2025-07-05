@@ -8,10 +8,12 @@ import Thread from "./Thread";
 export default function ChatContainer({
   card,
   backHidden,
+  chatInputRef,
 }: {
   card: CardType;
   reviewCard: (card: CardType, rating: number) => void; // TODO
   backHidden: boolean;
+  chatInputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   const [input, setInput] = useState("");
 
@@ -37,7 +39,7 @@ export default function ChatContainer({
   };
 
   return (
-    <div className="w-1/2 min-w-64 bg-gray-100 h-full p-4">
+    <div className="w-full h-full p-4">
       <div>ChatContainer</div>
       <Thread
         pastMessages={pastMessages}
@@ -49,6 +51,7 @@ export default function ChatContainer({
         onChange={setInput}
         onSend={handleSendMessage}
         isStreaming={isStreaming}
+        textareaRef={chatInputRef}
       />
       {error && (
         <ChatError

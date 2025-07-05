@@ -11,6 +11,7 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   isStreaming: boolean;
   disabled?: boolean;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export default function ChatInput({
@@ -19,8 +20,10 @@ export default function ChatInput({
   onSend,
   isStreaming,
   disabled = false,
+  textareaRef: externalTextareaRef,
 }: ChatInputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = externalTextareaRef || internalTextareaRef;
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [showCommandMenu, setShowCommandMenu] = useState(false);
   const [matchingCommands, setMatchingCommands] = useState<Command[]>([]);

@@ -1,7 +1,6 @@
 "use client";
-import { use, useState } from "react";
-import CardContainer from "../../components/CardContainer";
-import ChatContainer from "../../components/ChatContainer";
+import { use } from "react";
+import ReviewLayout from "../../components/ReviewLayout";
 import useCard from "../../hooks/useCard";
 
 export default function ReviewPage({
@@ -10,10 +9,10 @@ export default function ReviewPage({
   params: Promise<{ deckId: string }>;
 }) {
   const { deckId } = use(params);
-  const [card, reviewCard] = useCard(deckId);
-  const [backHidden, setBackHidden] = useState(true);
+  const { currentCard, reviewCard, backHidden, setBackHidden } =
+    useCard(deckId);
 
-  if (!card) {
+  if (!currentCard) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -26,20 +25,13 @@ export default function ReviewPage({
 
   return (
     <div>
-      ReviewPage {deckId}
-      <div className="flex flex-row w-full h-screen">
-        <CardContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-          revealBack={() => setBackHidden(false)}
-        />
-        <ChatContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-        />
-      </div>
+      {/* ReviewPage {deckId} */}
+      <ReviewLayout
+        card={currentCard}
+        reviewCard={reviewCard}
+        backHidden={backHidden}
+        revealBack={() => setBackHidden(false)}
+      />
     </div>
   );
 }
