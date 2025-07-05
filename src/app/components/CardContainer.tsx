@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { CardType } from "../hooks/useCard";
 
 export default function CardContainer({
@@ -86,7 +87,12 @@ export default function CardContainer({
     <div className="w-full h-full">
       <div className="flex flex-col gap-4 m-4">
         <Card key={card.id} className={`p-4 gap-0`}>
-          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{card.front}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSanitize]}
+          >
+            {card.front}
+          </ReactMarkdown>
           <div
             className={`grid transition-all duration-200 ease-in-out ${
               backHidden
@@ -96,7 +102,12 @@ export default function CardContainer({
           >
             <div className="overflow-hidden">
               <div className="w-full h-px bg-gray-300 my-4" />
-              <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{card.back}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+              >
+                {card.back}
+              </ReactMarkdown>
             </div>
           </div>
         </Card>
