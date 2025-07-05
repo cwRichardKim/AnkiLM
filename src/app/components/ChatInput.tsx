@@ -34,14 +34,14 @@ export default function ChatInput({
     if (textareaRef.current && !isStreaming) {
       textareaRef.current.focus();
     }
-  }, [isStreaming]);
+  }, [isStreaming, textareaRef]);
 
   // Auto-focus on mount
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [textareaRef]);
 
   // Reset selected index when commands change
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function ChatInput({
         textareaRef.current.setSelectionRange(length, length);
       }
     },
-    [value, onChange]
+    [value, onChange, textareaRef]
   );
 
   const handleKeyDown = useCallback(
