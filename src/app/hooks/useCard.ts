@@ -23,9 +23,6 @@ export default function useCard(deckId: string): {
 
   const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
-
-    // Move to next card and ensure back is hidden
-    // Both state updates happen simultaneously to avoid animation issues
     setBackHidden(true);
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
