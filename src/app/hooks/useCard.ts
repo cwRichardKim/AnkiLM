@@ -23,8 +23,7 @@ export default function useCard(deckId: string): {
 
   const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
-
-    // Move to next card
+    setBackHidden(true);
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
@@ -32,7 +31,6 @@ export default function useCard(deckId: string): {
       console.log("End of deck reached");
       setCurrentCardIndex(0);
     }
-    setBackHidden(true);
   };
 
   const currentCard = cards[currentCardIndex] || null;
