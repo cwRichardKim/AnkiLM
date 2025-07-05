@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { CardType } from "../hooks/useCard";
@@ -90,7 +91,7 @@ export default function CardContainer({
           <div className="text-foreground space-y-3">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeSanitize]}
+              rehypePlugins={[rehypeHighlight, rehypeSanitize]}
             >
               {card.front}
             </ReactMarkdown>
@@ -107,7 +108,7 @@ export default function CardContainer({
               <div className="text-foreground space-y-3">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSanitize]}
+                  rehypePlugins={[rehypeHighlight, rehypeSanitize]}
                 >
                   {card.back}
                 </ReactMarkdown>
