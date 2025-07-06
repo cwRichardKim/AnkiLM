@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/resizable";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardType } from "../hooks/useCard";
+import { useFormFactor } from "../hooks/useFormFactor";
 import CardContainer from "./CardContainer";
 import ChatContainer from "./ChatContainer";
 
@@ -28,6 +29,7 @@ export default function ReviewLayout({
   const cardContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const isCompact = useFormFactor() === "COMPACT";
 
   // Handle Tab key navigation
   const handleKeyDown = useCallback(
@@ -70,21 +72,21 @@ export default function ReviewLayout({
   return (
     <div className="flex justify-center items-center min-h-screen bg-background">
       <ResizablePanelGroup
-        direction="horizontal"
-        className="h-[70vh] w-full max-w-5xl rounded-xl shadow-xl bg-card md:flex-row flex-col overflow-hidden"
+        direction={isCompact ? "vertical" : "horizontal"}
+        className="w-full max-w-5xl rounded-xl shadow-xl bg-card overflow-hidden h-auto min-h-[400px] md:h-[70vh]"
       >
         <ResizablePanel
           defaultSize={50}
           minSize={20}
           maxSize={80}
-          className="flex flex-col min-w-64"
+          className="flex flex-col min-w-0 w-full"
         >
           <div
             ref={cardContainerRef}
             onClick={() => setFocusedPanel("card")}
             tabIndex={0}
             onFocus={() => setFocusedPanel("card")}
-            className={`flex flex-col h-full w-full outline-none md:block w-full transition-all duration-200 relative ${
+            className={`flex flex-col h-full w-full outline-none transition-all duration-200 relative ${
               focusedPanel === "card"
                 ? "z-10 shadow-lg bg-gray-100"
                 : "z-0 bg-gray-200"
@@ -99,19 +101,24 @@ export default function ReviewLayout({
             />
           </div>
         </ResizablePanel>
-        <ResizableHandle />
+        {/* Hide handle on compact/mobile */}
+        {!isCompact && (
+          <div className="hidden md:block">
+            <ResizableHandle />
+          </div>
+        )}
         <ResizablePanel
           defaultSize={50}
           minSize={20}
           maxSize={80}
-          className="flex flex-col min-w-64"
+          className="flex flex-col min-w-0 w-full"
         >
           <div
             ref={chatContainerRef}
             onClick={() => setFocusedPanel("chat")}
             tabIndex={0}
             onFocus={() => setFocusedPanel("chat")}
-            className={`flex flex-col h-full w-full outline-none md:block w-full transition-all duration-200 relative ${
+            className={`flex flex-col h-full w-full outline-none transition-all duration-200 relative ${
               focusedPanel === "chat"
                 ? "z-10 shadow-lg bg-gray-100"
                 : "z-0 bg-gray-200"
