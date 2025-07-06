@@ -1,4 +1,9 @@
 "use client";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardType } from "../hooks/useCard";
 import CardContainer from "./CardContainer";
@@ -62,56 +67,65 @@ export default function ReviewLayout({
     };
   }, [focusedPanel, handleKeyDown]);
 
-  const handleCardClick = () => {
-    setFocusedPanel("card");
-  };
-
-  const handleChatClick = () => {
-    setFocusedPanel("chat");
-  };
-
   return (
-    <div className="flex flex-row w-full px-4">
-      {/* Card Container */}
-      <div
-        ref={cardContainerRef}
-        onClick={handleCardClick}
-        tabIndex={0}
-        onFocus={() => setFocusedPanel("card")}
-        className={`w-1/2 min-w-64  h-full transition-all duration-200 relative outline-none ${
-          focusedPanel === "card"
-            ? "z-10 shadow-lg bg-gray-100"
-            : "z-0 bg-gray-200"
-        }`}
+    <div className="flex justify-center items-center min-h-screen bg-background">
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="h-[70vh] w-full max-w-5xl rounded-xl shadow-xl bg-card md:flex-row flex-col overflow-hidden"
       >
-        <CardContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-          revealBack={revealBack}
-          isFocused={focusedPanel === "card"}
-        />
-      </div>
-
-      {/* Chat Container */}
-      <div
-        ref={chatContainerRef}
-        onClick={handleChatClick}
-        tabIndex={0}
-        onFocus={() => setFocusedPanel("chat")}
-        className={`w-1/2 min-w-64 h-full transition-all duration-200 relative outline-none ${
-          focusedPanel === "chat"
-            ? "z-10 shadow-lg bg-gray-100"
-            : "z-0 bg-gray-200"
-        }`}
-      >
-        <ChatContainer
-          card={card}
-          reviewCard={reviewCard}
-          backHidden={backHidden}
-          chatInputRef={chatInputRef}
-        />
-      </div>
+        <ResizablePanel
+          defaultSize={50}
+          minSize={20}
+          maxSize={80}
+          className="flex flex-col min-w-64"
+        >
+          <div
+            ref={cardContainerRef}
+            onClick={() => setFocusedPanel("card")}
+            tabIndex={0}
+            onFocus={() => setFocusedPanel("card")}
+            className={`flex flex-col h-full w-full outline-none md:block w-full transition-all duration-200 relative ${
+              focusedPanel === "card"
+                ? "z-10 shadow-lg bg-gray-100"
+                : "z-0 bg-gray-200"
+            }`}
+          >
+            <CardContainer
+              card={card}
+              reviewCard={reviewCard}
+              backHidden={backHidden}
+              revealBack={revealBack}
+              isFocused={focusedPanel === "card"}
+            />
+          </div>
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel
+          defaultSize={50}
+          minSize={20}
+          maxSize={80}
+          className="flex flex-col min-w-64"
+        >
+          <div
+            ref={chatContainerRef}
+            onClick={() => setFocusedPanel("chat")}
+            tabIndex={0}
+            onFocus={() => setFocusedPanel("chat")}
+            className={`flex flex-col h-full w-full outline-none md:block w-full transition-all duration-200 relative ${
+              focusedPanel === "chat"
+                ? "z-10 shadow-lg bg-gray-100"
+                : "z-0 bg-gray-200"
+            }`}
+          >
+            <ChatContainer
+              card={card}
+              reviewCard={reviewCard}
+              backHidden={backHidden}
+              chatInputRef={chatInputRef}
+            />
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

@@ -39,27 +39,30 @@ export default function ChatContainer({
   };
 
   return (
-    <div className="w-full h-full p-4">
-      <div>ChatContainer</div>
-      <Thread
-        pastMessages={pastMessages}
-        optimisticMessages={optimisticMessages}
-        streamingMessage={streamingMessage}
-      />
-      <ChatInput
-        value={input}
-        onChange={setInput}
-        onSend={handleSendMessage}
-        isStreaming={isStreaming}
-        textareaRef={chatInputRef}
-      />
-      {error && (
-        <ChatError
-          error={error}
-          onRetry={retryMessage}
-          isRetrying={isRetrying}
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 overflow-y-auto px-4 pt-4">
+        <Thread
+          pastMessages={pastMessages}
+          optimisticMessages={optimisticMessages}
+          streamingMessage={streamingMessage}
         />
-      )}
+      </div>
+      <div className="sticky bottom-0 bg-inherit z-10 p-4 border-t border-border">
+        <ChatInput
+          value={input}
+          onChange={setInput}
+          onSend={handleSendMessage}
+          isStreaming={isStreaming}
+          textareaRef={chatInputRef}
+        />
+        {error && (
+          <ChatError
+            error={error}
+            onRetry={retryMessage}
+            isRetrying={isRetrying}
+          />
+        )}
+      </div>
     </div>
   );
 }

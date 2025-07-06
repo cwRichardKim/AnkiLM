@@ -84,8 +84,8 @@ export default function CardContainer({
   }, [isFocused, backHidden, card, reviewCard, revealBack]);
 
   return (
-    <div className="w-full h-full">
-      <div className="flex flex-col gap-4 m-4">
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 overflow-y-auto px-4 pt-4">
         <Card key={card.id} className={`p-4 gap-0`}>
           <div className="text-foreground space-y-3">
             <ReactMarkdown
@@ -115,48 +115,48 @@ export default function CardContainer({
             </div>
           </div>
         </Card>
-        <div className="flex justify-center">
-          <div className="flex flex-row gap-2 relative p-2">
-            {isFocused && (
-              <div className="absolute inset-0 ring-2 ring-blue-200 rounded-lg pointer-events-none" />
-            )}
-            {!backHidden
-              ? [
-                  <Button
-                    key="again"
-                    className="bg-red-500 hover:bg-red-600 text-white"
-                    onClick={() => reviewCard(card, 1)}
-                  >
-                    Again (1)
-                  </Button>,
-                  <Button
-                    key="hard"
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => reviewCard(card, 2)}
-                  >
-                    Hard (2)
-                  </Button>,
-                  <Button
-                    key="good"
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                    onClick={() => reviewCard(card, 3)}
-                  >
-                    Good (3 / Space)
-                  </Button>,
-                  <Button
-                    key="easy"
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                    onClick={() => reviewCard(card, 4)}
-                  >
-                    Easy (4)
-                  </Button>,
-                ]
-              : [
-                  <Button key="flip" onClick={() => revealBack()}>
-                    Flip (space)
-                  </Button>,
-                ]}
-          </div>
+      </div>
+      <div className="sticky bottom-0 bg-inherit z-10 flex justify-center p-4 border-t border-border">
+        <div className="flex flex-row gap-2 relative">
+          {isFocused && (
+            <div className="absolute inset-0 ring-2 ring-blue-200 rounded-lg pointer-events-none" />
+          )}
+          {!backHidden
+            ? [
+                <Button
+                  key="again"
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  onClick={() => reviewCard(card, 1)}
+                >
+                  Again (1)
+                </Button>,
+                <Button
+                  key="hard"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={() => reviewCard(card, 2)}
+                >
+                  Hard (2)
+                </Button>,
+                <Button
+                  key="good"
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => reviewCard(card, 3)}
+                >
+                  Good (3 / Space)
+                </Button>,
+                <Button
+                  key="easy"
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => reviewCard(card, 4)}
+                >
+                  Easy (4)
+                </Button>,
+              ]
+            : [
+                <Button key="flip" onClick={() => revealBack()}>
+                  Flip (space)
+                </Button>,
+              ]}
         </div>
       </div>
     </div>
