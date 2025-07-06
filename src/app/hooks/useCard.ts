@@ -27,7 +27,7 @@ export default function useCard(deckId: string): {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
-      // End of deck - could reset or show completion message
+      // End of deck - reset to beginning
       console.log("End of deck reached");
       setCurrentCardIndex(0);
     }
@@ -35,5 +35,10 @@ export default function useCard(deckId: string): {
 
   const currentCard = cards[currentCardIndex] || null;
 
-  return { currentCard, reviewCard, backHidden, setBackHidden };
+  return {
+    currentCard,
+    reviewCard,
+    backHidden,
+    setBackHidden,
+  };
 }
