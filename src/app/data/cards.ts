@@ -117,4 +117,68 @@ def min_edit_distance(s1: str, s2: str) -> int:
 
 **Example:** "Airlines offer flights with different fare classes that have varying prices and availability"`,
   },
+  {
+    id: "card-6",
+    front: "JS: Implementing a concurrent task runner in ts",
+    back: `Throttle task execution to prevent resource overload
+
+use case: you have many async tasks, but want to limit how many run simultaneously to avoid overwhelming APIs, databases, or system resources
+—-
+
+**Key insight:** Use a Set to track active promises and Promise.race() to wait for any task to complete.
+
+**Mental model:** Like having a fixed number of workers - when all are busy, new jobs wait for the next worker to become available.
+
+\`\`\`typescript
+class ConcurrentTaskRunner {
+  private running = new Set<Promise<any>>();
+  
+  constructor(private maxConcurrent: number) {}
+
+  async run<T>(taskFactory: () => Promise<T>): Promise<T> {
+    // Wait for a slot to open up
+    while (this.running.size >= this.maxConcurrent) {
+      await Promise.race(this.running);
+    }
+
+    // Start the task
+    const promise = taskFactory().finally(() => {
+      this.running.delete(promise);
+    });
+    
+    this.running.add(promise);
+    return promise;
+  }
+}
+\`\`\`
+
+## Usage Examples
+
+\`\`\`typescript
+const runner = new ConcurrentTaskRunner(3); // Max 3 concurrent
+
+// Throttle API calls
+const urls = ['url1', 'url2', 'url3', 'url4', 'url5'];
+const results = await runner.runAll(
+  urls.map(url => () => fetch(url).then(r => r.json()))
+);
+
+// Or individual tasks
+await runner.run(() => processLargeFile('file1.txt'));
+await runner.run(() => processLargeFile('file2.txt'));
+\`\`\`
+
+## How It Works
+
+1. **Check capacity:** If under limit → start immediately
+1. **Wait for slot:** If at limit → use Promise.race() to wait for any task to finish
+1. **Auto-cleanup:** Each task removes itself from the Set when complete
+1. **Result preservation:** Returns the actual task result, not just completion
+
+## When to Use
+
+- **API rate limiting:** Prevent hitting rate limits on external services
+- **Resource management:** Limit concurrent file operations, database connections
+- **System protection:** Prevent overwhelming CPU/memory with too many parallel operations`,
+  },
 ];
