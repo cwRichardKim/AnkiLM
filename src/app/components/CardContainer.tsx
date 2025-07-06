@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { CardType } from "../hooks/useCard";
+import { useFormFactor } from "../hooks/useFormFactor";
 
 export default function CardContainer({
   card,
@@ -19,6 +20,7 @@ export default function CardContainer({
   revealBack: () => void;
   isFocused: boolean;
 }) {
+  const isCompact = useFormFactor() === "COMPACT";
   // Handle card keyboard shortcuts when focused
   useEffect(() => {
     if (!isFocused) return;
@@ -117,7 +119,7 @@ export default function CardContainer({
         </Card>
       </div>
       <div className="sticky bottom-0 bg-inherit z-10 flex justify-center p-4 border-t border-border">
-        <div className="flex flex-row gap-2 relative">
+        <div className="flex flex-row flex-wrap gap-2 relative justify-center">
           {isFocused && (
             <div className="absolute inset-0 ring-2 ring-blue-200 rounded-lg pointer-events-none" />
           )}
@@ -128,33 +130,33 @@ export default function CardContainer({
                   className="bg-red-500 hover:bg-red-600 text-white"
                   onClick={() => reviewCard(card, 1)}
                 >
-                  Again (1)
+                  {isCompact ? "Again" : "Again (1)"}
                 </Button>,
                 <Button
                   key="hard"
                   className="bg-orange-500 hover:bg-orange-600 text-white"
                   onClick={() => reviewCard(card, 2)}
                 >
-                  Hard (2)
+                  {isCompact ? "Hard" : "Hard (2)"}
                 </Button>,
                 <Button
                   key="good"
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                   onClick={() => reviewCard(card, 3)}
                 >
-                  Good (3 / Space)
+                  {isCompact ? "Good" : "Good (3 / Space)"}
                 </Button>,
                 <Button
                   key="easy"
                   className="bg-green-500 hover:bg-green-600 text-white"
                   onClick={() => reviewCard(card, 4)}
                 >
-                  Easy (4)
+                  {isCompact ? "Easy" : "Easy (4)"}
                 </Button>,
               ]
             : [
                 <Button key="flip" onClick={() => revealBack()}>
-                  Flip (space)
+                  {isCompact ? "Flip" : "Flip (space)"}
                 </Button>,
               ]}
         </div>

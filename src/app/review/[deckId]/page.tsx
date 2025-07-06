@@ -10,6 +10,7 @@ import { use } from "react";
 import ReviewLayout from "../../components/ReviewLayout";
 import useCard from "../../hooks/useCard";
 import { useFileUpload } from "../../hooks/useFileUpload";
+import { useFormFactor } from "../../hooks/useFormFactor";
 
 export default function ReviewPage({
   params,
@@ -21,7 +22,7 @@ export default function ReviewPage({
     useCard(deckId);
   const { handleFileSelect, isUploading, uploadError, uploadedDecks } =
     useFileUpload();
-
+  const isCompact = useFormFactor() === "COMPACT";
   if (!currentCard) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -34,8 +35,7 @@ export default function ReviewPage({
   }
 
   return (
-    <div>
-      {/* Upload UI */}
+    <div className="flex flex-col h-screen">
       <div className="flex flex-row w-full p-4 justify-center gap-4">
         <Menubar>
           <MenubarMenu>
@@ -51,7 +51,6 @@ export default function ReviewPage({
         </Menubar>
       </div>
 
-      {/* Show upload status */}
       {uploadError && (
         <div className="text-red-500 text-center p-2 bg-red-50 border border-red-200 rounded">
           {uploadError}
@@ -66,13 +65,16 @@ export default function ReviewPage({
         </div>
       )}
 
-      {/* Card Review */}
-      <ReviewLayout
-        card={currentCard}
-        reviewCard={reviewCard}
-        backHidden={backHidden}
-        revealBack={() => setBackHidden(false)}
-      />
+      <div
+        className={`${isCompact ? "px-4 pb-4" : "px-8 pb-12"} flex-1 h-full min-h-0 overflow-hidden`}
+      >
+        <ReviewLayout
+          card={currentCard}
+          reviewCard={reviewCard}
+          backHidden={backHidden}
+          revealBack={() => setBackHidden(false)}
+        />
+      </div>
     </div>
   );
 }

@@ -70,10 +70,10 @@ export default function ReviewLayout({
   }, [focusedPanel, handleKeyDown]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-background">
+    <div className="flex justify-center items-center h-full w-full min-h-0 bg-background">
       <ResizablePanelGroup
         direction={isCompact ? "vertical" : "horizontal"}
-        className="w-full max-w-5xl rounded-xl shadow-xl bg-card overflow-hidden h-auto min-h-[400px] md:h-[70vh]"
+        className="h-full w-full min-h-0 rounded-xl shadow-xl bg-card overflow-hidden border-solid border-2 border-gray-300"
       >
         <ResizablePanel
           defaultSize={50}
