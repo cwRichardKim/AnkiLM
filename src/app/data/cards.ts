@@ -97,4 +97,24 @@ def min_edit_distance(s1: str, s2: str) -> int:
   return dp[m][n]
 \`\`\``,
   },
+  {
+    id: "card-5",
+    front:
+      "Backend: How do you systematically identify database entities from business requirements without missing key concepts?",
+    back: `**The "Noun + Verb" Method:**
+1. **Extract nouns** from requirements → potential entities
+2. **Extract verbs** → potential relationships/attributes
+3. **Ask "what changes independently?"** → separate entities
+
+**Example - Flight Search:**
+- **Nouns:** Airlines, flights, fare classes, prices, availability
+- **What changes independently?**
+  - Airline info (rarely changes) → \`airlines\` table
+  - Flight schedules (weekly changes) → \`flights\` table  
+  - Daily pricing/availability (hourly changes) → \`flight_instances\` + \`fare_classes\` tables
+
+**Pro tip:** Ask "If this changes, what else needs to update?" If the answer is "many things," you probably need separate entities.
+
+**Example:** "Airlines offer flights with different fare classes that have varying prices and availability"`,
+  },
 ];
