@@ -9,14 +9,15 @@ interface UseChatStreamProps {
 }
 
 interface UseChatStreamReturn {
-  pastMessages: MessageType[];
-  optimisticMessages: MessageType[];
-  streamingMessage: MessageType | null;
-  isStreaming: boolean;
+  abortCurrentStream: () => void;
   error: string | null;
   isRetrying: boolean;
-  sendMessage: (message: string) => Promise<void>;
+  isStreaming: boolean;
+  optimisticMessages: MessageType[];
+  pastMessages: MessageType[];
   retryMessage: () => void;
+  sendMessage: (message: string) => Promise<void>;
+  streamingMessage: MessageType | null;
 }
 
 export function useChatStream({
@@ -33,10 +34,19 @@ export function useChatStream({
   );
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
+
+  const abortCurrentStream = useCallback(() => {
+    if (abortController) {
+      abortController.abort();
+    }
+  }, [abortController]);
 
   const sendMessage = useCallback(
     async (message: string, command: ChatRequest["command"] = "explain") => {
       if (!message.trim()) return;
+      abortCurrentStream();
 
       setIsStreaming(true);
       setError(null);
@@ -52,7 +62,16 @@ export function useChatStream({
 
       setOptimisticMessages(newOptimisticMessages);
 
+      const newStreamingMessage: MessageType = {
+        role: "agent",
+        content: "",
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+      };
+
       try {
+        const controller = new AbortController();
+        setAbortController(controller);
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: {
@@ -63,6 +82,7 @@ export function useChatStream({
             context: { card, backHidden },
             command,
           } as ChatRequest),
+          signal: controller.signal,
         });
 
         const reader = res.body?.getReader();
@@ -70,14 +90,6 @@ export function useChatStream({
 
         const decoder = new TextDecoder();
         let buffer = "";
-        let confirmedCursor: string | null = null;
-
-        const newStreamingMessage: MessageType = {
-          role: "agent",
-          content: "",
-          id: crypto.randomUUID(),
-          timestamp: Date.now(),
-        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -96,7 +108,6 @@ export function useChatStream({
                 switch (json.type) {
                   case "metadata":
                     newStreamingMessage.timestamp = json.startedAt;
-                    confirmedCursor = json.cursor;
                     break;
                   case "content":
                     newStreamingMessage.content += json.content;
@@ -114,30 +125,31 @@ export function useChatStream({
             }
           }
         }
-
-        setPastMessages([...allMessages, newStreamingMessage]);
-        setStreamingMessage(null);
-        setOptimisticMessages((prev) => {
-          const indexAtCursor = prev.findIndex(
-            (message) => message.id === confirmedCursor
-          );
-          if (indexAtCursor === -1) {
-            throw new Error(
-              `Cursor not found in optimistic messages: ${confirmedCursor}, ${JSON.stringify(prev)}`
-            );
-          }
-          return prev.slice(0, indexAtCursor);
-        });
         setError(null);
       } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : "Failed to send message");
-        setOptimisticMessages((prev) => prev.slice(0, -1));
+        if (err instanceof Error) {
+          if (err.name !== "AbortError") {
+            console.error(err);
+            setError(err.message);
+          }
+        }
       } finally {
+        // When the stream is complete or aborted or encounters an error, we set everything
+        // to be part of the thread and reset optimistic messages and the streaming message.
+        // TODO: use optimistic for retrying
+        setOptimisticMessages([]);
+        setStreamingMessage(null);
+
+        // any in progress streaming message is now part of the thread
+        setPastMessages([
+          ...allMessages,
+          ...(newStreamingMessage ? [newStreamingMessage] : []),
+        ]);
         setIsStreaming(false);
+        setAbortController(null);
       }
     },
-    [optimisticMessages, pastMessages, card, backHidden]
+    [abortCurrentStream, optimisticMessages, pastMessages, card, backHidden]
   );
 
   const retryMessage = useCallback(() => {
@@ -149,13 +161,14 @@ export function useChatStream({
   }, [error, optimisticMessages, sendMessage]);
 
   return {
-    pastMessages,
-    optimisticMessages,
-    streamingMessage,
-    isStreaming,
+    abortCurrentStream,
     error,
     isRetrying,
-    sendMessage,
+    isStreaming,
+    optimisticMessages,
+    pastMessages,
     retryMessage,
+    sendMessage,
+    streamingMessage,
   };
 }

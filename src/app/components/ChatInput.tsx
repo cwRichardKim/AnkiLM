@@ -6,21 +6,23 @@ import CommandMenu from "./CommandMenu";
 import CommandTip from "./CommandTip";
 
 interface ChatInputProps {
-  value: string;
+  abortCurrentStream: () => void;
+  disabled?: boolean;
+  isStreaming: boolean;
   onChange: (value: string) => void;
   onSend: (message: string) => void;
-  isStreaming: boolean;
-  disabled?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  value: string;
 }
 
 export default function ChatInput({
-  value,
+  abortCurrentStream,
+  disabled = false,
+  isStreaming,
   onChange,
   onSend,
-  isStreaming,
-  disabled = false,
   textareaRef: externalTextareaRef,
+  value,
 }: ChatInputProps) {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalTextareaRef || internalTextareaRef;
@@ -34,14 +36,14 @@ export default function ChatInput({
     if (textareaRef.current && !isStreaming) {
       textareaRef.current.focus();
     }
-  }, [isStreaming]);
+  }, [isStreaming, textareaRef]);
 
   // Auto-focus on mount
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [textareaRef]);
 
   // Reset selected index when commands change
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function ChatInput({
         textareaRef.current.setSelectionRange(length, length);
       }
     },
-    [value, onChange]
+    [value, onChange, textareaRef]
   );
 
   const handleKeyDown = useCallback(
@@ -120,11 +122,15 @@ export default function ChatInput({
       }
 
       // Handle Enter to send (only if not navigating menu)
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !isStreaming &&
+        !disabled &&
+        value.trim()
+      ) {
         e.preventDefault();
-        if (value.trim() && !isStreaming && !disabled) {
-          onSend(value);
-        }
+        onSend(value);
       }
     },
     [
@@ -139,11 +145,13 @@ export default function ChatInput({
     ]
   );
 
-  const handleSend = useCallback(() => {
-    if (value.trim() && !isStreaming && !disabled) {
+  const handleButtonClick = useCallback(() => {
+    if (isStreaming) {
+      abortCurrentStream();
+    } else if (value.trim() && !disabled) {
       onSend(value);
     }
-  }, [value, isStreaming, disabled, onSend]);
+  }, [value, isStreaming, disabled, onSend, abortCurrentStream]);
 
   const handleDismissCommandTip = useCallback(() => {
     setSelectedCommand(null);
@@ -183,10 +191,10 @@ export default function ChatInput({
       </div>
 
       <Button
-        disabled={isStreaming || !value.trim() || disabled}
-        onClick={handleSend}
+        disabled={disabled || (!value.trim() && !isStreaming)}
+        onClick={handleButtonClick}
       >
-        {isStreaming ? "Sending..." : "Send"}
+        {isStreaming ? "Cancel" : "Send"}
       </Button>
     </div>
   );
