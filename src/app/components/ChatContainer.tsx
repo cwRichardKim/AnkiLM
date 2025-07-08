@@ -18,14 +18,15 @@ export default function ChatContainer({
   const [input, setInput] = useState("");
 
   const {
-    pastMessages,
-    optimisticMessages,
-    streamingMessage,
-    isStreaming,
+    abortCurrentStream,
     error,
     isRetrying,
-    sendMessage,
+    isStreaming,
+    optimisticMessages,
+    pastMessages,
     retryMessage,
+    sendMessage,
+    streamingMessage,
   } = useChatStream({ card, backHidden });
 
   // Cleanup when card changes
@@ -54,6 +55,7 @@ export default function ChatContainer({
           onSend={handleSendMessage}
           isStreaming={isStreaming}
           textareaRef={chatInputRef}
+          abortCurrentStream={abortCurrentStream}
         />
         {error && (
           <ChatError

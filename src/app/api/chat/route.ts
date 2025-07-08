@@ -70,6 +70,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
+          if (req.signal?.aborted) {
+            controller.close();
+            return;
+          }
+
           // Send metadata as first SSE event
           const metadata: ChatResponseChunk = {
             type: "metadata",
@@ -81,6 +86,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           );
 
           for await (const chunk of stream) {
+            if (req.signal?.aborted) {
+              controller.close();
+              return;
+            }
             const normalizedChunk = normalizeRealtimeChunk(chunk);
             if (normalizedChunk.done) {
               const doneEvent: ChatResponseChunk = { type: "done" };
