@@ -102,11 +102,7 @@ export default function ReviewLayout({
           </div>
         </ResizablePanel>
         {/* Hide handle on compact/mobile */}
-        {!isCompact && (
-          <div className="hidden md:block">
-            <ResizableHandle />
-          </div>
-        )}
+        {!isCompact && <ResizableHandle />}
         <ResizablePanel
           defaultSize={50}
           minSize={20}

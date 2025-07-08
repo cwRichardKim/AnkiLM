@@ -21,12 +21,9 @@ export default function Thread({
   );
   return (
     <div>
-      Thread ({messages.length} messages)
-      <div>
-        {messages.map((message) => (
-          <Message key={message.id} message={message} />
-        ))}
-      </div>
+      {messages.map((message) => (
+        <Message key={message.id} message={message} />
+      ))}
     </div>
   );
 }

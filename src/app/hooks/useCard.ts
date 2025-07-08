@@ -13,6 +13,7 @@ export default function useCard(deckId: string): {
   backHidden: boolean;
   setBackHidden: (backHidden: boolean) => void;
 } {
+  const [demoCards] = useState(cards.sort(() => Math.random() - 0.5));
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [backHidden, setBackHidden] = useState(true);
 
@@ -24,7 +25,7 @@ export default function useCard(deckId: string): {
   const reviewCard = (card: CardType, rating: number) => {
     console.log(`Reviewed card ${card.id} with rating ${rating}`);
     setBackHidden(true);
-    if (currentCardIndex < cards.length - 1) {
+    if (currentCardIndex < demoCards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
       // End of deck - reset to beginning
@@ -33,7 +34,7 @@ export default function useCard(deckId: string): {
     }
   };
 
-  const currentCard = cards[currentCardIndex] || null;
+  const currentCard = demoCards[currentCardIndex] || null;
 
   return {
     currentCard,

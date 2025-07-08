@@ -35,7 +35,7 @@ export function useChatStream({
   const [isRetrying, setIsRetrying] = useState(false);
 
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string, command: ChatRequest["command"] = "explain") => {
       if (!message.trim()) return;
 
       setIsStreaming(true);
@@ -61,7 +61,7 @@ export function useChatStream({
           body: JSON.stringify({
             messages: allMessages,
             context: { card, backHidden },
-            command: "explain",
+            command,
           } as ChatRequest),
         });
 

@@ -1,4 +1,7 @@
 import { Card } from "@/components/ui/card";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 
 export interface MessageType {
   role: "user" | "agent";
@@ -23,7 +26,12 @@ export default function Message({ message }: { message: MessageType }) {
             )
           </span>
         </div>
-        <div>{message.content}</div>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeSanitize]}
+        >
+          {message.content}
+        </ReactMarkdown>
       </Card>
     </div>
   );
