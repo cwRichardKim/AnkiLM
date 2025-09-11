@@ -77,11 +77,12 @@ interface ImportResponse {
 **requirements.txt**:
 
 ```
-anki==2.1.66  # Pinned version - critical!
-fastapi==0.104.1
-uvicorn==0.24.0
-python-multipart==0.0.6
+anki
+fastapi
+uvicorn
+python-multipart
 ```
+TODO: pin these versions once you move to production-ready stages
 
 **main.py** (Stage 0 - Parse Real Data):
 
