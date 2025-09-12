@@ -1,4 +1,0 @@
-anki
-fastapi
-uvicorn
-python-multipart
