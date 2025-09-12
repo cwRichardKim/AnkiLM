@@ -6,14 +6,6 @@ export default async function DecksList() {
     const decks = await getDeckNames();
     const data = { decks };
 
-    if ("error" in data) {
-      return (
-        <div className="text-red-600 p-4 border border-red-200 rounded">
-          Error: {data.error}
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-4">
         {data.decks.length === 0 ? (
