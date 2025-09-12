@@ -1,4 +1,4 @@
-import { Command } from "@/app/data/commands";
+import { Command } from "../data/commands";
 import { Card, CardContent } from "@/components/ui/card";
 import { X } from "lucide-react";
 

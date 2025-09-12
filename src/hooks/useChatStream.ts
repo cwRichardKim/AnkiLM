@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ChatRequest } from "../api/chat/route";
+import { ChatRequest } from "../app/api/chat/route";
 import { MessageType } from "../components/Message";
 import { CardType } from "./useCard";
 
