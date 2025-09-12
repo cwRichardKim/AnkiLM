@@ -1,5 +1,5 @@
-import { MessageType } from "@/app/components/Message";
-import { CardType } from "@/app/hooks/useCard";
+import { MessageType } from "@/components/Message";
+import { CardType } from "@/hooks/useCard";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 

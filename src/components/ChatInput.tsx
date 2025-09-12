@@ -1,4 +1,4 @@
-import { Command, findCommand, getMatchingCommands } from "@/app/data/commands";
+import { Command, findCommand, getMatchingCommands } from "../data/commands";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useCallback, useEffect, useRef, useState } from "react";

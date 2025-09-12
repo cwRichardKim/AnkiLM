@@ -7,10 +7,10 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { use } from "react";
-import ReviewLayout from "../../components/ReviewLayout";
-import useCard from "../../hooks/useCard";
-import { useFileUpload } from "../../hooks/useFileUpload";
-import { useFormFactor } from "../../hooks/useFormFactor";
+import ReviewLayout from "../../../components/ReviewLayout";
+import useCard from "../../../hooks/useCard";
+import { useFileUpload } from "../../../hooks/useFileUpload";
+import { useFormFactor } from "../../../hooks/useFormFactor";
 
 export default function ReviewPage({
   params,
