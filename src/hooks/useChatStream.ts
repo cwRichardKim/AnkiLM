@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { ChatRequest } from "../app/api/chat/route";
-import { MessageType } from "../components/Message";
+import { chatStream, ChatRequest } from "@/lib/actions/chat";
+import { MessageType } from "@/components/Message";
 import { CardType } from "./useCard";
 
 interface UseChatStreamProps {
@@ -16,7 +16,10 @@ interface UseChatStreamReturn {
   optimisticMessages: MessageType[];
   pastMessages: MessageType[];
   retryMessage: () => void;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (
+    message: string,
+    command?: ChatRequest["command"]
+  ) => Promise<void>;
   streamingMessage: MessageType | null;
 }
 
@@ -72,22 +75,14 @@ export function useChatStream({
       try {
         const controller = new AbortController();
         setAbortController(controller);
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: allMessages,
-            context: { card, backHidden },
-            command,
-          } as ChatRequest),
-          signal: controller.signal,
+
+        const stream = await chatStream({
+          messages: allMessages,
+          context: { card, backHidden },
+          command,
         });
 
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error("No reader");
-
+        const reader = stream.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
 
