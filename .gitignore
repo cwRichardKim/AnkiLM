@@ -45,3 +45,5 @@ next-env.d.ts
 
 # Temporary files
 touch
+*storybook.log
+storybook-static
