@@ -38,15 +38,15 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 
 ## Current Architecture: Clean Separation of Concerns with AnkiConnect
 
-### Interface: `anki-service.ts`
+### Core Interface: `anki-service.ts`
 
 **File**: `src/lib/anki-service.ts`
 
-**Purpose**: Single source of truth for all AnkiConnect communication
+**Purpose**: Single source of truth for all AnkiConnect communication with strong types
 
-- **`ankiConnectRequest(action, params?)`** - Core function that handles ALL `localhost:8765` calls
-- **Types**: AnkiDeck, AnkiCard, AnkiError, AnkiDeckStats
-- **No business logic** - pure infrastructure layer
+- **Type-safe functions**: `getDeckNames(): Promise<string[]>`, `getNextCard(): Promise<AnkiCard>`, etc.
+- **No `any` types**: All functions return properly typed data
+- **Pure functions**: No Next.js dependencies, just AnkiConnect communication
 
 ### Business Logic: Server Actions
 
@@ -59,13 +59,14 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 - **`updateCard(cardId, rating)`** - Update card with rating (includes revalidation)
 - **`getDeckStats(deckName)`** - Get deck statistics
 
-### Data Fetching: API Routes
+### HTTP Interface: API Routes
 
 **File**: `src/app/api/decks/route.ts`
 
 **Purpose**: HTTP endpoints for client-side consumption
 
-- **`GET /api/decks`** - Returns deck list via `ankiConnectRequest("deckNames")`
+- **`GET /api/decks`** - Uses server action `getDecks()` for consistent error handling
+- **No duplication** - delegates to server actions
 
 ### Server-Side Rendering: Server Components
 
@@ -73,7 +74,7 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 
 **Purpose**: Server Component for initial data fetching with Suspense
 
-- **Calls API route** for data fetching
+- **Calls anki-service directly** - `getDeckNames()` for optimal performance
 - **Suspense integration** for loading states
 - **Server-side rendering** for better performance
 
@@ -94,10 +95,21 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Server        │    │   anki-service   │    │   AnkiConnect   │
-│   Components    │───▶│   (core comm)    │───▶│   (localhost)   │
-│   API Routes    │    │                  │    │                 │
-│   Server Actions│    │                  │    │                 │
+│   Components    │───▶│   (typed core)   │───▶│   (localhost)   │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+                                ▲
+                                │
+                       ┌─────────────────┐
+                       │   Server        │
+                       │   Actions       │
+                       │   (+ Next.js)   │
+                       └─────────────────┘
+                                ▲
+                                │
+                       ┌─────────────────┐
+                       │   API Routes    │
+                       │   (HTTP layer)  │
+                       └─────────────────┘
 ```
 
 ### Current API Endpoints
@@ -105,7 +117,7 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 **`GET /api/decks`**
 
 - **Purpose**: Get list of all deck names
-- **Implementation**: Calls `ankiConnectRequest("deckNames")`
+- **Implementation**: Uses server action `getDecks()` for consistent error handling
 - **Response**: `{ decks: string[] }` or `{ error: string }`
 
 ### Server Actions Available
@@ -139,22 +151,22 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 
 ```typescript
 // src/app/decks/DecksList.tsx
+import { getDeckNames } from "@/lib/anki-service";
+
 export default async function DecksList() {
-  // Calls API route for data fetching
-  const response = await fetch("/api/decks", { cache: "no-store" });
-  const result = await response.json();
+  try {
+    const decks = await getDeckNames(); // Type-safe: Promise<string[]>
 
-  if ("error" in result) {
-    return <div>Error: {result.error}</div>;
+    return (
+      <ul>
+        {decks.map((deck) => (
+          <li key={deck}>{deck}</li>
+        ))}
+      </ul>
+    );
+  } catch (error) {
+    return <div>Error: {error.message}</div>;
   }
-
-  return (
-    <ul>
-      {result.decks.map((deck: string) => (
-        <li key={deck}>{deck}</li>
-      ))}
-    </ul>
-  );
 }
 ```
 
@@ -175,15 +187,16 @@ const result = await updateCard("123", 3);
 
 ```typescript
 // src/app/api/decks/route.ts
-import { ankiConnectRequest } from "@/lib/anki-service";
+import { getDecks } from "@/lib/actions/anki";
 
 export async function GET() {
-  try {
-    const result = await ankiConnectRequest("deckNames");
-    return NextResponse.json({ decks: result });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const result = await getDecks();
+
+  if ("error" in result) {
+    return NextResponse.json(result, { status: 500 });
   }
+
+  return NextResponse.json(result);
 }
 ```
 
@@ -373,10 +386,10 @@ curl -X POST http://localhost:3000/api/anki \
 - **Decision**: Use Server Components for initial data fetching with Suspense boundaries
 - **Rationale**: Better performance, SEO-friendly, proper loading states
 
-### 4. **API Routes for Client-Side Consumption**
+### 4. **API Routes Use Server Actions**
 
-- **Decision**: API routes call `anki-service` directly, not through server actions
-- **Rationale**: Server actions are for mutations, API routes are for data fetching
+- **Decision**: API routes call server actions for consistent error handling
+- **Rationale**: Avoids duplication, ensures consistent error format across all interfaces
 
 ---
 

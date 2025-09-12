@@ -1,65 +1,68 @@
 "use server";
 
-import { ankiConnectRequest as ankiService } from "@/lib/anki-service";
+import {
+  getDeckNames,
+  getNextCard,
+  updateCard as updateCardService,
+  getDeckStats,
+  type AnkiCard,
+  type AnkiDeckStats,
+} from "@/lib/anki-service";
 import { revalidatePath } from "next/cache";
 
-// Types for Anki operations
-export interface AnkiDeck {
-  name: string;
-  id: string;
-}
-
-export interface AnkiCard {
-  id: string;
-  front: string;
-  back: string;
-  deckName: string;
-}
+// Re-export types for convenience
+export type { AnkiCard, AnkiDeckStats };
 
 export interface AnkiError {
   error: string;
 }
 
-// TODO: add a proper type for AnkiDeckStats
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnkiDeckStats = any;
+// Server action to get all decks
+export async function getDecks(): Promise<{ decks: string[] } | AnkiError> {
+  try {
+    const decks = await getDeckNames();
+    return { decks };
+  } catch (error) {
+    return { error: `Error fetching decks: ${error}` };
+  }
+}
 
 // Server action to get the next card from a deck
-export async function getNextCard(
+export async function getNextCardAction(
   deckName: string
 ): Promise<{ card: AnkiCard } | AnkiError> {
   try {
-    const result = await ankiService("getNextCard", { deckName });
-    return { card: result };
+    const card = await getNextCard(deckName);
+    return { card };
   } catch (error) {
     return { error: `Error fetching next card: ${error}` };
   }
 }
 
 // Server action to update a card's rating
-export async function updateCard(
+export async function updateCardAction(
   cardId: string,
   rating: number
 ): Promise<{ card: AnkiCard } | AnkiError> {
   try {
-    const result = await ankiService("updateCard", { cardId, rating });
+    const card = await updateCardService(cardId, rating);
 
     // Revalidate any cached data that might depend on this card
     revalidatePath("/review");
 
-    return { card: result };
+    return { card };
   } catch (error) {
     return { error: `Error updating card: ${error}` };
   }
 }
 
 // Server action to get deck statistics
-export async function getDeckStats(
+export async function getDeckStatsAction(
   deckName: string
 ): Promise<{ stats: AnkiDeckStats } | AnkiError> {
   try {
-    const result = await ankiService("getDeckStats", { deckName });
-    return { stats: result };
+    const stats = await getDeckStats(deckName);
+    return { stats };
   } catch (error) {
     return { error: `Error fetching deck stats: ${error}` };
   }
