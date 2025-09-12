@@ -17,108 +17,190 @@ Building a real-time Anki integration for AnkiLM using AnkiConnect to provide se
 - **Problems**: Media validation errors, collection state issues, format complexity
 - **Maintenance burden**: Keeping up with Anki's internal format changes
 - **User experience**: Complex error handling and edge cases
+- **Deployment complexity**: Required Python service alongside Next.js
 
 **New Plan**: Use AnkiConnect for real-time Anki integration
 
 - **Benefits**: No format parsing, real-time data, reliable access
 - **Simpler architecture**: No Python service needed
 - **Better UX**: Always current data, seamless integration
+- **Local-first**: Leverages existing Anki setup
+
+### Key Decision Points
+
+1. **Format Complexity**: Anki's internal format is complex and changes frequently
+2. **Media Handling**: APKG parsing had issues with media file validation
+3. **Real-time Data**: AnkiConnect provides live data vs. static file parsing
+4. **Maintenance**: AnkiConnect is maintained by the Anki community
+5. **User Experience**: No file uploads needed, works with existing Anki setup
 
 ---
 
-## Current Implementation: AnkiConnect API
+## Current Architecture: Clean Separation of Concerns with AnkiConnect
 
-### API Endpoint: `/api/anki`
+### Interface: `anki-service.ts`
 
-**Route**: `src/app/api/anki/route.ts`
+**File**: `src/lib/anki-service.ts`
 
-**Actions Supported**:
+**Purpose**: Single source of truth for all AnkiConnect communication
 
-- `getDecks` - Get list of decks with metadata
-- `getNextCard` - Get next card due for review from specified deck
-- `updateCard` - Update card with rating (1-5 scale)
+- **`ankiConnectRequest(action, params?)`** - Core function that handles ALL `localhost:8765` calls
+- **Types**: AnkiDeck, AnkiCard, AnkiError, AnkiDeckStats
+- **No business logic** - pure infrastructure layer
 
-### Request/Response Format
+### Business Logic: Server Actions
 
-```typescript
-// Request format
-POST /api/anki
-{
-  "action": "getDecks" | "getNextCard" | "updateCard",
-  "deckName"?: string,    // For getNextCard
-  "cardId"?: number,      // For updateCard
-  "rating"?: number       // For updateCard (1-5)
-}
+**File**: `src/lib/actions/anki/index.ts`
 
-// Response format
-{
-  "decks"?: Array<{
-    name: string,
-    dueCards: number,
-    totalCards: number
-  }>,
-  "card"?: {
-    id: number,
-    front: string,
-    back: string,
-    deck: string,
-    due: number,
-    interval: number,
-    ease: number
-  },
-  "success"?: boolean,
-  "error"?: string
-}
-```
+**Purpose**: Server actions for mutations and business operations
+
+- **`getDecks()`** - Get all deck names
+- **`getNextCard(deckName)`** - Get next card from deck
+- **`updateCard(cardId, rating)`** - Update card with rating (includes revalidation)
+- **`getDeckStats(deckName)`** - Get deck statistics
+
+### Data Fetching: API Routes
+
+**File**: `src/app/api/decks/route.ts`
+
+**Purpose**: HTTP endpoints for client-side consumption
+
+- **`GET /api/decks`** - Returns deck list via `ankiConnectRequest("deckNames")`
+
+### Server-Side Rendering: Server Components
+
+**File**: `src/app/decks/DecksList.tsx`
+
+**Purpose**: Server Component for initial data fetching with Suspense
+
+- **Calls API route** for data fetching
+- **Suspense integration** for loading states
+- **Server-side rendering** for better performance
 
 ---
 
-## User Flow Implementation
+## Architectural Decisions
 
-### 1. Deck Selection
+### Why This Architecture?
 
-```typescript
-// Get deck list with metadata
-const response = await fetch("/api/anki", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ action: "getDecks" }),
-});
+1. **Single Source of Truth**: All AnkiConnect calls go through `ankiConnectRequest`
+2. **Proper Separation**: Infrastructure vs business logic vs API layer
+3. **Easy Removal**: When removing AnkiConnect, only update `anki-service.ts`
+4. **No Duplication**: Server actions and API routes use the same core functions
+5. **Next.js Best Practices**: Server Components for SSR, API routes for client-side
 
-// Response: { decks: [{ name: "Programming", dueCards: 5, totalCards: 150 }] }
+### Data Flow
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Server        │    │   anki-service   │    │   AnkiConnect   │
+│   Components    │───▶│   (core comm)    │───▶│   (localhost)   │
+│   API Routes    │    │                  │    │                 │
+│   Server Actions│    │                  │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-### 2. Card Review
+### Current API Endpoints
+
+**`GET /api/decks`**
+
+- **Purpose**: Get list of all deck names
+- **Implementation**: Calls `ankiConnectRequest("deckNames")`
+- **Response**: `{ decks: string[] }` or `{ error: string }`
+
+### Server Actions Available
+
+**`getDecks()`**
+
+- **Purpose**: Get all deck names
+- **Returns**: `{ decks: string[] } | AnkiError`
+
+**`getNextCard(deckName: string)`**
+
+- **Purpose**: Get next card from specified deck
+- **Returns**: `{ card: AnkiCard } | AnkiError`
+
+**`updateCard(cardId: string, rating: number)`**
+
+- **Purpose**: Update card with rating (1-5 scale)
+- **Features**: Includes `revalidatePath("/review")` for cache invalidation
+- **Returns**: `{ card: AnkiCard } | AnkiError`
+
+**`getDeckStats(deckName: string)`**
+
+- **Purpose**: Get deck statistics
+- **Returns**: `{ stats: AnkiDeckStats } | AnkiError`
+
+---
+
+## Current Implementation Examples
+
+### 1. Server Component Data Fetching
 
 ```typescript
-// Get next card from selected deck
-const response = await fetch("/api/anki", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    action: "getNextCard",
-    deckName: "Programming",
-  }),
-});
+// src/app/decks/DecksList.tsx
+export default async function DecksList() {
+  // Calls API route for data fetching
+  const response = await fetch("/api/decks", { cache: "no-store" });
+  const result = await response.json();
 
-// Response: { card: { id: 123, front: "What is...", back: "A closure is..." } }
+  if ("error" in result) {
+    return <div>Error: {result.error}</div>;
+  }
+
+  return (
+    <ul>
+      {result.decks.map((deck: string) => (
+        <li key={deck}>{deck}</li>
+      ))}
+    </ul>
+  );
+}
 ```
 
-### 3. Card Rating
+### 2. Server Action Usage
 
 ```typescript
+// For mutations and business logic
+import { getDecks, updateCard } from "@/lib/actions/anki";
+
+// Get decks
+const decks = await getDecks();
+
 // Update card with rating
-const response = await fetch("/api/anki", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    action: "updateCard",
-    cardId: 123,
-    rating: 3,
-  }),
-});
+const result = await updateCard("123", 3);
+```
 
-// Response: { success: true }
+### 3. API Route Implementation
+
+```typescript
+// src/app/api/decks/route.ts
+import { ankiConnectRequest } from "@/lib/anki-service";
+
+export async function GET() {
+  try {
+    const result = await ankiConnectRequest("deckNames");
+    return NextResponse.json({ decks: result });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+```
+
+### 4. Suspense Integration
+
+```typescript
+// src/app/decks/page.tsx
+export default function DecksPage() {
+  return (
+    <div>
+      <h1>Your Anki Decks</h1>
+      <Suspense fallback={<DecksSkeleton />}>
+        <DecksList />
+      </Suspense>
+    </div>
+  );
+}
 ```
 
 ---
@@ -157,24 +239,28 @@ const response = await fetch("/api/anki", {
 
 ### ✅ Completed
 
-- Basic AnkiConnect integration
-- Deck listing with metadata
-- Card retrieval from specific decks
-- Card rating/updating
+- **Clean Architecture**: Proper separation between infrastructure, business logic, and API layers
+- **Single Source of Truth**: All AnkiConnect calls go through `ankiConnectRequest`
+- **Server Components**: Initial data fetching with Suspense integration
+- **API Routes**: HTTP endpoints for client-side consumption
+- **Server Actions**: Business logic with Next.js features (revalidation)
+- **Type Safety**: Proper TypeScript interfaces for all operations
+- **Error Handling**: Consistent error handling across all layers
 
 ### 🔄 In Progress
 
-- Error handling and edge cases
-- Data transformation and validation
-- Integration with existing UI components
+- **Deck Selection UI**: Basic deck listing implemented
+- **Suspense Integration**: Loading states and error boundaries
+- **Server-Side Rendering**: Initial page load optimization
 
 ### 📋 TODO
 
-- Add card buffering for performance
-- Implement AI chat integration with current card
-- Add media file handling
-- Error recovery and user feedback
-- Production deployment considerations
+- **Card Review Interface**: Implement card display and rating UI
+- **AI Chat Integration**: Connect current card context to chat
+- **Performance Optimization**: Add caching and buffering
+- **Error Recovery**: Better user feedback and retry mechanisms
+- **Media Handling**: Support for images and audio in cards
+- **Production Deployment**: Consider scalability and deployment options
 
 ---
 
@@ -194,9 +280,10 @@ const response = await fetch("/api/anki", {
 
 ### Future Scalability
 
-- **Hybrid approach**: AnkiConnect for local users, file upload for others
+- **Hybrid approach**: AnkiConnect for local users, APKG file upload for others
 - **Own database**: Import Anki data to our own format for web deployment
 - **Multiple backends**: Support both AnkiConnect and standalone modes
+- **Fallback options**: If AnkiConnect fails, fall back to file upload workflow
 
 ---
 
@@ -267,28 +354,48 @@ curl -X POST http://localhost:3000/api/anki \
 
 ---
 
-## Key Decisions
+## Key Architectural Decisions
 
-- **AnkiConnect over APKG parsing**: Simpler, more reliable, real-time data
-- **Action-based API**: Consistent interface for all Anki operations
-- **Local-first approach**: Leverage existing Anki setup, no data migration
-- **Gradual enhancement**: Start simple, add features incrementally
+### 1. **Single Source of Truth for AnkiConnect**
+
+- **Decision**: All `localhost:8765` calls go through `ankiConnectRequest` in `anki-service.ts`
+- **Rationale**: Easy to remove AnkiConnect later, no duplication, consistent error handling
+
+### 2. **Proper Separation of Concerns**
+
+- **Infrastructure**: `anki-service.ts` - pure communication layer
+- **Business Logic**: `actions/anki/index.ts` - server actions with Next.js features
+- **API Layer**: `api/decks/route.ts` - HTTP endpoints for client consumption
+- **UI Layer**: Server Components with Suspense for optimal performance
+
+### 3. **Server Components + Suspense Pattern**
+
+- **Decision**: Use Server Components for initial data fetching with Suspense boundaries
+- **Rationale**: Better performance, SEO-friendly, proper loading states
+
+### 4. **API Routes for Client-Side Consumption**
+
+- **Decision**: API routes call `anki-service` directly, not through server actions
+- **Rationale**: Server actions are for mutations, API routes are for data fetching
 
 ---
 
 ## What We're NOT Doing
 
+- **APKG file parsing**: Avoided due to format complexity and maintenance burden
+- **Python service**: No need for separate Python backend
 - **Complex format parsing**: Let Anki handle its own data format
 - **Media file management**: Focus on text content first
 - **Real-time synchronization**: Manual refresh is sufficient for now
 - **Multi-user support**: Single-user local setup initially
+- **Client-side AnkiConnect calls**: All external calls stay server-side
 
 ---
 
 ## Next Steps
 
-1. **Complete current implementation**: Finish error handling and edge cases
-2. **Integrate with UI**: Connect API to existing review components
-3. **Add AI features**: Integrate chat with current card context
-4. **Performance optimization**: Add card buffering and caching
-5. **Production planning**: Consider deployment and scalability options
+1. **Complete Card Review UI**: Implement card display and rating interface
+2. **AI Chat Integration**: Connect current card context to chat system
+3. **Performance Optimization**: Add caching and error recovery
+4. **Production Planning**: Consider deployment and scalability options
+5. **Testing**: Add comprehensive error handling and edge case testing
