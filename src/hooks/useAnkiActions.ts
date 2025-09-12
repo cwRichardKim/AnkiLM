@@ -9,6 +9,7 @@ import {
 export interface UseAnkiActionsReturn {
   // State
   decks: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentCard: any | null;
   loading: boolean;
   error: string | null;
@@ -17,11 +18,13 @@ export interface UseAnkiActionsReturn {
   fetchDecks: () => Promise<void>;
   fetchNextCard: (deckName: string) => Promise<void>;
   updateCardRating: (cardId: string, rating: number) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fetchDeckStats: (deckName: string) => Promise<any>;
 }
 
 export function useAnkiActions(): UseAnkiActionsReturn {
   const [decks, setDecks] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentCard, setCurrentCard] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

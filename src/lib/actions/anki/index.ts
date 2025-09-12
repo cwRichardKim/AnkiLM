@@ -20,6 +20,7 @@ export interface AnkiError {
 }
 
 // Helper function to communicate with AnkiConnect
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ankiConnectRequest(action: string, params: any = {}) {
   try {
     const response = await fetch("http://localhost:8765", {
@@ -80,6 +81,7 @@ export async function updateCard(
 // Server action to get deck statistics
 export async function getDeckStats(
   deckName: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ stats: any } | AnkiError> {
   try {
     const result = await ankiConnectRequest("getDeckStats", { deckName });
